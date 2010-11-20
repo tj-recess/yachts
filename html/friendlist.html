@@ -1,0 +1,79 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>YACHTS - Yet Another Chat Server</title>
+<link href="stylelog.css" rel="stylesheet" type="text/css" />
+<script>
+function newChatWindow(opt) {
+	var selected = new Array();
+	var index = 0;
+	var strSel="";
+	for (var intLoop=0; intLoop < opt.length; intLoop++) {
+		if (opt[intLoop].selected) {
+			index = selected.length;
+			selected[index] = new Object;
+			selected[index].value = opt[intLoop].value;
+			selected[index].index = intLoop;
+		}
+	}
+	
+	for (var item in selected)       
+		strSel += selected[item].value + "\n";
+	
+	var winid="win"+strSel; // a new window id for every conversation 
+	window.open('chatwin.html',winid,'width=420,height=300');
+}
+</script>
+</head>
+
+<body>
+
+<div id="layer01_holder">
+  <div id="left"></div>
+  <div id="center"></div>
+  <div id="right"></div>
+</div>
+
+<div id="layer02_holder">
+  <div id="left"></div>
+  <div id="center"></div>
+  <div id="right"></div>
+</div>
+
+<div id="layer03_holder">
+  <div id="left"></div>
+  <div id="center">
+  <table width="100%" border="0" cellspacing="0" cellpadding="0">
+  <tr>
+    <td>Friend List<br /><br/></td>
+  </tr>
+  <tr>
+    <td>
+    <form name="friendlist">
+    <select name="friends" multiple size=5 width="50px">
+    <option value="Rahul Dravid">Rahul Dravid
+    <option value="Saurav Ganguly">Saurav Ganguly
+    <option value="Sachin Tendulkar">Sachin Tendulkar
+    </select>
+    <input type="button" name="invite" value="Chat" onClick="newChatWindow(this.form.friends.options)">
+    </form>
+      </td>
+  </tr>
+</table>
+  </div>
+  <div id="right"></div>
+</div>
+
+<div id="layer04_holder">
+  <div id="left"></div>
+  <div id="center">
+  </div>
+  <div id="right"></div>
+</div>
+
+<div id="layer05_holder">
+  <div align="left">Copyright © 2007, Artfans Design</div>
+</div>
+</body>
+</html>
