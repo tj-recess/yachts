@@ -16,11 +16,13 @@
 %% API Functions
 %%dwai, password, firstName, lastName, location, emailId
 
+start()->spawn(users, initRegisteredUserList, []).
+
 initRegisteredUserList()->
 	application:start(odbc),
 	ConnString="Driver={MySQL ODBC 5.1 Driver};Server=localhost;Database=yachts;User=root;Password=root;Option=3;",
 	{ok, Conn}=odbc:connect(ConnString, []),
-	spawn(users, loginManagerDB, [dict:new(), Conn]).
+	loginManagerDB(dict:new(), Conn).
 
 loginManagerDB(UserDict, Conn)->
 	receive
@@ -35,15 +37,24 @@ loginManagerDB(UserDict, Conn)->
 				{{sql_varchar, 30},[EmailId]}]
 				),
 			case Result of
-				{udpated, _ } ->
+				{updated, _ } ->
 					From ! success;
 			 	{error, _ } ->
 					From ! Result
 			end,
-			odbc:disconnect(Conn),
+			loginManagerDB(UserDict, Conn);
+		%%login an existing user
+		{From, login, Username, Password}->
+			case dict:find(Username, UserDict) of
+				error -> From ! failure,
+						loginManager(UserDict);		
+				{ok, [{Passwd, _, _, _, _}]} when Password == Passwd-> From ! true,
+						loginManager(UserDict);
+				{ok, _} -> From ! false,
+						loginManager(UserDict)  
+			end,
 			loginManagerDB(UserDict, Conn);
 		_ ->
-			odbc:disconnect(Conn),
 			loginManagerDB(UserDict, Conn)
 	end.
 		
@@ -52,8 +63,10 @@ registerUser(LoginManagerPid, Username, Password, FirstName, LastName, Location,
   -> LoginManagerPid ! {self(), register, {Username, Password, FirstName, LastName, Location, EmailId}},
 	receive
 		success ->io:format("User is registered successfully!");
-		{error, Msg} ->Msg;
-		Other -> Other
+
+		{error, Msg} ->Msg
+	after 5000 -> 
+		io:format("Operation timed out, Try again later!")
 	end.
 
 loginUser(LoginManagerPid, Username, Password)->
