@@ -23,6 +23,7 @@ public class YachtsClient {
 		}
 		in.close();
 		out.close();
+		console.close();
 	} 
 	
 }

@@ -8,12 +8,18 @@ import java.util.ArrayList;
 public class User {
 	
 	/* parameters */
+	private int UserID;
 	private String FirstName;
 	private String LastName;
-	private byte[] Password;
-	private final String Username; // Username cannot be changed
+	private String Password;
+	private String Username; // Username cannot be changed
 	private String Location;
 	private String EmailAddress;
+	
+	public void setUsername(String username) {
+		Username = username;
+	}
+
 	private ArrayList<Integer> activeSessionIDList; // Ids of all current sessions in which this user is active
 	
 	public ArrayList<Integer> getActiveSessionIDList() {
@@ -41,11 +47,11 @@ public class User {
 		LastName = lastName;
 	}
 
-	public byte[] getPassword() {
+	public String getPassword() {
 		return Password;
 	}
 
-	public void setPassword(byte[] password) {
+	public void setPassword(String password) {
 		Password = password;
 	}
 
@@ -70,17 +76,22 @@ public class User {
 	}
 
 	
-	public User(String fname, String lname, String password, String username,String location,String email) throws NoSuchAlgorithmException, UnsupportedEncodingException{
+	public User(String fname, String lname, String password, String username,String location,String email){
 		this.FirstName=fname;
 		this.LastName=lname;
 		this.Username=username;
 		this.Location=location;
 		this.EmailAddress=email;
 		
-		/* converting password to md5 hash*/
-		byte[] passwordBytes = password.getBytes("UTF-8");
-		MessageDigest md = MessageDigest.getInstance("MD5");
-		this.Password = md.digest(passwordBytes);	
+		 //converting password to md5 hash
+		try{
+			byte[] passwordBytes = password.getBytes("UTF-8");
+			MessageDigest md = MessageDigest.getInstance("MD5");
+			this.Password = md.digest(passwordBytes).toString();
+		}
+		catch(NoSuchAlgorithmException ne){}
+		catch (UnsupportedEncodingException ue){}
+		
 	}
 	
 	public boolean login(String username,String password) throws UnsupportedEncodingException, NoSuchAlgorithmException{
@@ -102,5 +113,13 @@ public class User {
 	
 	boolean joinChat(Session someSession){
 		return someSession.addUser(this);
+	}
+
+	public void setUserID(int userID) {
+		UserID = userID;
+	}
+
+	public int getUserID() {
+		return UserID;
 	}
 }

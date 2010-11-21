@@ -32,8 +32,8 @@ public class LoginManager {
 		return LoginManager.getLoginManager().loggedInUsers.add(u);
 	}
 	//creates user and store it’s fields to database
-	 public User registerUser(String fname, String lname, String password, String username,String location,String email) throws NoSuchAlgorithmException, UnsupportedEncodingException {
-		 return new User(fname, lname, password,username,location,email);
+	 //public User registerUser(String fname, String lname, String password, String username,String location,String email) throws NoSuchAlgorithmException, UnsupportedEncodingException {
+		 //return new User(fname, lname, password,username,location,email);
 		 
-	 }
+	 //}
 }
