@@ -26,6 +26,32 @@ initRegisteredUserList()->
 	{ok, Conn}=odbc:connect(ConnString, []),
 	loginManagerDB(dict:new(), Conn).
 
+
+registerUser(Username, Password, FirstName, LastName, Location, EmailId)
+  -> loginManager ! {self(), register, {Username, Password, FirstName, LastName, Location, EmailId}},
+	receive
+		success ->io:format("User is registered successfully!");
+
+		{error, Msg} ->Msg
+	after 5000 -> 
+		io:format("Operation timed out, Try again later!")
+	end.
+
+loginUser([UserPid, Username, Password])->
+	loginManager ! {self() , login , Username, Password, UserPid},
+	receive
+		already ->io:format("User is already logged into the system!");
+		success ->io:format("User has successfully logged into the system!");
+		%%{failure,Result} -> Result;
+		failure ->io:format("Username, Password don't match, Login Failed!");
+		Result ->Result
+	after 2000 ->
+		io:format("Operation timed out, Try again later!")
+	end.
+
+%%
+%% Local Functions
+%%
 loginManagerDB(LoggedInUserList, Conn)->
 	receive
 		%%register a user
@@ -47,7 +73,7 @@ loginManagerDB(LoggedInUserList, Conn)->
 			loginManagerDB(LoggedInUserList, Conn);
 
 		%%login an existing user
-		{From, login, Username, Password, UserSocket}->
+		{From, login, Username, Password, UserPid}->
 			case dict:find(Username, LoggedInUserList) of
 				{ok, _} -> %% found in dictionary, user already logged in
 					From ! already;
@@ -63,7 +89,7 @@ loginManagerDB(LoggedInUserList, Conn)->
 							From ! {failure, "User doesn't exists in system!!"},
 							loginManagerDB(LoggedInUserList, Conn);
 						{selected, _, [H|_]} -> 
-							NewList = dict:append(Username, {H,UserSocket}, LoggedInUserList),
+							NewList = dict:append(Username, {H,UserPid}, LoggedInUserList),
 							From ! success,
 							loginManagerDB(NewList, Conn);
 						{error, _ } ->	
@@ -74,52 +100,4 @@ loginManagerDB(LoggedInUserList, Conn)->
 			
 		_ ->
 			loginManagerDB(LoggedInUserList, Conn)
-	end.
-		
-
-registerUser(Username, Password, FirstName, LastName, Location, EmailId)
-  -> loginManager ! {self(), register, {Username, Password, FirstName, LastName, Location, EmailId}},
-	receive
-		success ->io:format("User is registered successfully!");
-
-		{error, Msg} ->Msg
-	after 5000 -> 
-		io:format("Operation timed out, Try again later!")
-	end.
-
-loginUser([UserSocket, Username, Password])->
-	loginManager ! {self() , login , Username, Password, UserSocket},
-	receive
-		already ->io:format("User is already logged into the system!");
-		success ->io:format("User has successfully logged into the system!");
-		%%{failure,Result} -> Result;
-		failure ->io:format("Username, Password don't match, Login Failed!");
-		Result ->Result
-	after 2000 ->
-		io:format("Operation timed out, Try again later!")
-	end.
-
-%%
-%% Local Functions
-%%
-
-loginManager(UserDict)->
-	receive
-		{From, register, {Username, Password, FirstName, LastName, Location, EmailId}}->
-			case dict:find(Username, UserDict) of
-				error -> From ! success,
-						loginManager(dict:append(Username, {Password, FirstName, LastName, Location, EmailId}, UserDict));		
-				{ok, _} -> From ! failure,
-						loginManager(UserDict)
-			end;
-		
-		{From, login, Username, Password}->
-			case dict:find(Username, UserDict) of
-				error -> From ! failure,
-						loginManager(UserDict);		
-				{ok, [{Passwd, _, _, _, _}]} when Password == Passwd-> From ! true,
-						loginManager(UserDict);
-				{ok, _} -> From ! false,
-						loginManager(UserDict)  
-			end
 	end.
