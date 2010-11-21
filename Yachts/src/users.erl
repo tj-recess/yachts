@@ -24,7 +24,7 @@ initRegisteredUserList()->
 	{ok, Conn}=odbc:connect(ConnString, []),
 	loginManagerDB(dict:new(), Conn).
 
-loginManagerDB(UserDict, Conn)->
+loginManagerDB(LoggedInUserList, Conn)->
 	receive
 		%%register a user
 		{From, register, {Username, Password, FirstName, LastName, Location, EmailId}}->
@@ -42,20 +42,36 @@ loginManagerDB(UserDict, Conn)->
 			 	{error, _ } ->
 					From ! Result
 			end,
-			loginManagerDB(UserDict, Conn);
+			loginManagerDB(LoggedInUserList, Conn);
+
 		%%login an existing user
 		{From, login, Username, Password}->
-			case dict:find(Username, UserDict) of
-				error -> From ! failure,
-						loginManager(UserDict);		
-				{ok, [{Passwd, _, _, _, _}]} when Password == Passwd-> From ! true,
-						loginManager(UserDict);
-				{ok, _} -> From ! false,
-						loginManager(UserDict)  
-			end,
-			loginManagerDB(UserDict, Conn);
+			case dict:find(Username, LoggedInUserList) of
+				{ok, _} -> %% found in dictionary, user already logged in
+					From ! already;
+			
+				error -> %% not already logged in, fetch from DB 
+					Result = odbc:param_query(Conn, "CALL GetUserInfo(?,?)", 
+						[{{sql_varchar, 30},[Username]},
+						{{sql_varchar, 30},[Password]}
+						]),
+					case Result of %%accepting first record from the returned data
+						%% ideally, only one record should have returned.
+						{selected, _, []} ->
+							From ! {failure, "User doesn't exists in system!!"},
+							loginManagerDB(LoggedInUserList, Conn);
+						{selected, _, [H|_]} -> 
+							NewDict = dict:append(Username, H, LoggedInUserList),
+							From ! success,
+							loginManagerDB(NewDict, Conn);
+						{error, _ } ->	
+							From ! {failure, Result},
+							loginManagerDB(LoggedInUserList, Conn)
+					end
+			end;
+			
 		_ ->
-			loginManagerDB(UserDict, Conn)
+			loginManagerDB(LoggedInUserList, Conn)
 	end.
 		
 
@@ -72,9 +88,13 @@ registerUser(LoginManagerPid, Username, Password, FirstName, LastName, Location,
 loginUser(LoginManagerPid, Username, Password)->
 	LoginManagerPid ! {self() , login , Username, Password},
 	receive
-		true ->io:format("User is logged in successfully!");
-		false ->io:format("Username or password is incorrect, Login Failed!");
-		failure ->io:format("Username or password is incorrect, Login Failed!")
+		already ->io:format("User is already logged into the system!");
+		success ->io:format("User has successfully logged into the system!");
+		%%{failure,Result} -> Result;
+		failure ->io:format("Username, Password don't match, Login Failed!");
+		Result ->Result
+	after 2000 ->
+		io:format("Operation timed out, Try again later!")
 	end.
 
 %%
