@@ -1,0 +1,8 @@
+USE yachts;
+CREATE TABLE RegisteredUsers(UserID INTEGER AUTO_INCREMENT PRIMARY KEY,
+Username VARCHAR(20),
+Password VARCHAR(30),
+FirstName VARCHAR(30),
+LastName VARCHAR(30),
+Location VARCHAR(30),
+EmailID VARCHAR(30));
