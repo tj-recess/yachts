@@ -16,7 +16,9 @@
 %% API Functions
 %%dwai, password, firstName, lastName, location, emailId
 
-start()->spawn(users, initRegisteredUserList, []).
+start()->
+	Pid = spawn(users, initRegisteredUserList, []),
+	register(loginManager, Pid).
 
 initRegisteredUserList()->
 	application:start(odbc),
@@ -45,7 +47,7 @@ loginManagerDB(LoggedInUserList, Conn)->
 			loginManagerDB(LoggedInUserList, Conn);
 
 		%%login an existing user
-		{From, login, Username, Password}->
+		{From, login, Username, Password, UserSocket}->
 			case dict:find(Username, LoggedInUserList) of
 				{ok, _} -> %% found in dictionary, user already logged in
 					From ! already;
@@ -61,9 +63,9 @@ loginManagerDB(LoggedInUserList, Conn)->
 							From ! {failure, "User doesn't exists in system!!"},
 							loginManagerDB(LoggedInUserList, Conn);
 						{selected, _, [H|_]} -> 
-							NewDict = dict:append(Username, H, LoggedInUserList),
+							NewList = dict:append(Username, {H,UserSocket}, LoggedInUserList),
 							From ! success,
-							loginManagerDB(NewDict, Conn);
+							loginManagerDB(NewList, Conn);
 						{error, _ } ->	
 							From ! {failure, Result},
 							loginManagerDB(LoggedInUserList, Conn)
@@ -75,8 +77,8 @@ loginManagerDB(LoggedInUserList, Conn)->
 	end.
 		
 
-registerUser(LoginManagerPid, Username, Password, FirstName, LastName, Location, EmailId)
-  -> LoginManagerPid ! {self(), register, {Username, Password, FirstName, LastName, Location, EmailId}},
+registerUser(Username, Password, FirstName, LastName, Location, EmailId)
+  -> loginManager ! {self(), register, {Username, Password, FirstName, LastName, Location, EmailId}},
 	receive
 		success ->io:format("User is registered successfully!");
 
@@ -85,8 +87,8 @@ registerUser(LoginManagerPid, Username, Password, FirstName, LastName, Location,
 		io:format("Operation timed out, Try again later!")
 	end.
 
-loginUser(LoginManagerPid, Username, Password)->
-	LoginManagerPid ! {self() , login , Username, Password},
+loginUser([UserSocket, Username, Password])->
+	loginManager ! {self() , login , Username, Password, UserSocket},
 	receive
 		already ->io:format("User is already logged into the system!");
 		success ->io:format("User has successfully logged into the system!");
