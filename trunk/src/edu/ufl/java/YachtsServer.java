@@ -2,6 +2,7 @@ package edu.ufl.java;
 
 import java.io.*;
 import java.net.*;
+import java.security.NoSuchAlgorithmException;
 import java.util.StringTokenizer;
 
 public class YachtsServer {
@@ -72,21 +73,26 @@ public class YachtsServer {
 		public void processCommand(String inputstring){
 			// get the command
 			StringTokenizer st = new StringTokenizer(inputstring,"^");
-			System.out.println("Extracted command: ");
 			boolean flag=true;
 			String token ="",message="";
+			Command cmd = new Command();
 			
 			while(st.hasMoreTokens()){
-				token = st.nextToken();
 				if(flag){
 					// first token
+					token = st.nextToken();
+					
 					System.out.println("Extracted command: "+token);
 					flag=false;
+					
+					if(token.equalsIgnoreCase("REGISTER")){
+						cmd.registerCommand(inputstring);
+					}
+					else if(token.equalsIgnoreCase("LOGIN")){
+						cmd.loginCommand(inputstring);
+					}
 				}
-				else
-					message += token;
 			}
-			System.out.println("Extracted message: "+message);
 		}
 		
 		public void run() {

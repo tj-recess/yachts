@@ -10,15 +10,14 @@ import org.hibernate.criterion.Order;
 /* manage all database stuff */ 
 public class DBManager {
 	
-	public boolean registerUser(User newuser){
+	public boolean addUserToDB(User newuser){
 		Session session = HibernateUtils.getSession();			    
 		Transaction tx = null;
 		try{
 			tx=session.beginTransaction();
 			session.save(newuser);
 			session.getTransaction().commit();
-			session.flush();
-		}
+			}
 		catch (HibernateException he) {
 			if (tx!=null) tx.rollback();
 			throw he;
@@ -28,7 +27,4 @@ public class DBManager {
 		}
 		return true;
 	}
-	
-	
-
 }

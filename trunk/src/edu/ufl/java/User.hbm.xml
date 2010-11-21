@@ -3,26 +3,15 @@
           "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
           "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd" >
 <hibernate-mapping>
-  <class name="edu.ufl.User" table="mdnsMSDSessionRecord">
- 	 <id name="Username" column="ursIdentifier"/>
-    <property name="charset" column="charset" />
-    <property name="expirationtime" column="expirationtime" />
-    <property name="channelIPAsString" column="channelIP"/>
-    <property name="channelPort" column="channelPort" />
-    <property name="unicastIPAsString" column="unicastIP" />
-    <property name="unicastPort" column="unicastPort" />
-    <property name="channelScope" column="channelScope" />
-    <property name="geographicCN" column="geographicCN" />
-    <property name="latitude" column="latitude" />
-    <property name="longitude" column="longitude" />
-    <property name="networkType" column="networkType" />
-    <property name="sourceIPAsString" column="sourceIP" />
-    <property name="streamType" column="streamType" />
-    <property name="preferredApplication" column="preferredApplication" />
-    <property name="cliArgument" column="cliArgument" />
-    <property name="mimeType" column="mimeType" />
-    <property name="startTime" column="startTime" />
-    <property name="isChannelScopeLocal" column="isChannelScopeLocal" />
-    <property name="hashedKeyword" column="hashedKeyword" />
-    </class>
+  <class name="edu.ufl.java.User" table="RegisteredUsers">
+  	<id name="UserID" column="UserID" type="int">
+		<generator class="native"></generator>
+	</id>
+ 	<property name="FirstName" column="FirstName" />
+ 	<property name="LastName" column="LastName" />
+ 	<property name="Username" column="Username" />
+ 	<property name="Password" column="Password" />
+ 	<property name="Location" column="Location" />
+ 	<property name="EmailAddress" column="EmailID" />
+   </class>
 </hibernate-mapping>
