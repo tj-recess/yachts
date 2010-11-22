@@ -2,13 +2,13 @@ package edu.ufl.java;
 
 import java.io.*;
 import java.net.*;
-import java.security.NoSuchAlgorithmException;
 import java.util.StringTokenizer;
 
 public class YachtsServer {
 
 	private ServerSocket server;
 	private Socket connection;
+	int concurrentconnectioncount=0;
 	
 	public YachtsServer(int port) throws IOException {
 		server = new ServerSocket(port);
@@ -26,7 +26,12 @@ public class YachtsServer {
 		try {
 			while(true) {
 				connection = server.accept();
-				System.out.println("Got connection");
+				concurrentconnectioncount++;
+				System.out.println("Got connection #: "+concurrentconnectioncount+
+						"\n Client socket details: \n Conn: connection.toString(): "+connection.toString()+
+						"\nConn: connection.getInetAddress(): "+connection.getInetAddress()+
+						"\nConn: connection.getRemoteSocketAddress(): "+connection.getRemoteSocketAddress());
+				
 				ConnectionHandler conn = new ConnectionHandler(connection);
 				conn.start();
 			}
@@ -51,10 +56,10 @@ public class YachtsServer {
 		}
 		
 		// start session manager 
-		SessionManager sessionmanager = SessionManager.getSessionManager();
+		//SessionManager sessionmanager = SessionManager.getSessionManager();
 		
 		// start login manager 
-		LoginManager loginmanager = LoginManager.getLoginManager();
+		//LoginManager loginmanager = LoginManager.getLoginManager();
 		
 		// start server
 		server.runServer();
@@ -70,11 +75,11 @@ public class YachtsServer {
 			this.conn = connection;
 		}
 		
-		public void processCommand(String inputstring){
+		public String processCommand(String inputstring){
 			// get the command
 			StringTokenizer st = new StringTokenizer(inputstring,"^");
-			boolean flag=true;
-			String token ="",message="";
+			boolean flag=true, status;
+			String token ="";
 			Command cmd = new Command();
 			
 			while(st.hasMoreTokens()){
@@ -86,28 +91,53 @@ public class YachtsServer {
 					flag=false;
 					
 					if(token.equalsIgnoreCase("REGISTER")){
-						cmd.registerCommand(inputstring);
+						status = cmd.registerCommand(inputstring);
+						return ""+status;
 					}
+					
 					else if(token.equalsIgnoreCase("LOGIN")){
-						cmd.loginCommand(inputstring);
+						status = cmd.loginCommand(inputstring);
+						
+						if (status){
+							// logged in success message
+							return "LoginResponse^SUCCESS^User authenticated successfully";
+						}
+						
+						return "LoginResponse^ERROR^Login Error. Check your credentials";
+					}
+					
+					else if(token.equalsIgnoreCase("CreateSession")){
+						status = cmd.createSessionCommand(inputstring);
+						return "";
+					}
+					
+					else if(token.equalsIgnoreCase("getAllLoggedInUsers")){
+						String userlist = cmd.getAllLoggedInUsers(inputstring);
+						System.out.println("User list: "+userlist);
+						return userlist;
 					}
 				}
 			}
+			return "<error>";
 		}
 		
 		public void run() {
 			try {
 				in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
 				out = new PrintWriter(conn.getOutputStream());
-				String command = null;
+				String command = null, serverresp;
+				
 				while((command = in.readLine())!=null){
 					// receive command
 					System.out.println("Got command: " + command);
 					
 					// process command
-					processCommand(command);
+					serverresp = processCommand(command);
+					out.println("Response: "+serverresp);
+					out.flush();
 				}
 				in.close();
+				out.close();
 				conn.close();
 				
 			} catch (IOException e) {
@@ -116,6 +146,5 @@ public class YachtsServer {
 			}
 		}
 		
-	}
-	
+	}	
 }

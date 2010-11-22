@@ -1,8 +1,5 @@
 package edu.ufl.java;
 
-import java.io.UnsupportedEncodingException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 
 public class User {
@@ -75,36 +72,25 @@ public class User {
 		return Username;
 	}
 
+	public User(){} //default constructor 
 	
-	public User(String fname, String lname, String password, String username,String location,String email){
+	public User(String fname, String lname, String username, String password, String location,String email){
 		this.FirstName=fname;
 		this.LastName=lname;
 		this.Username=username;
 		this.Location=location;
 		this.EmailAddress=email;
+		this.Password=password;
 		
 		 //converting password to md5 hash
-		try{
+		/*try{
 			byte[] passwordBytes = password.getBytes("UTF-8");
 			MessageDigest md = MessageDigest.getInstance("MD5");
-			this.Password = md.digest(passwordBytes).toString();
+			this.Password = (md);
 		}
 		catch(NoSuchAlgorithmException ne){}
 		catch (UnsupportedEncodingException ue){}
-		
-	}
-	
-	public boolean login(String username,String password) throws UnsupportedEncodingException, NoSuchAlgorithmException{
-		boolean loginstatus=false;
-		
-		/* converting password to md5 hash*/
-		byte[] passwordBytes = password.getBytes("UTF-8");
-		MessageDigest md = MessageDigest.getInstance("MD5");
-		byte[] passwd = md.digest(passwordBytes);	
-		
-		/* validate the user */
-		
-		return loginstatus;
+		*/
 	}
 	
 	boolean leaveChat(Session someSession){

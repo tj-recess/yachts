@@ -18,8 +18,10 @@ public class YachtsClient {
 		String s;
 		
 		while((s = console.readLine()) != null) {
+			System.out.println(s);
 			out.println(s);
 			out.flush();
+			System.out.println("Server says: "+in.readLine());
 		}
 		in.close();
 		out.close();
