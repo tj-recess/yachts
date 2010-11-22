@@ -12,16 +12,19 @@ public class YachtsClient {
 		
 		Socket connection = new Socket("localhost", 5255);
 		BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-		BufferedReader console = new BufferedReader(new InputStreamReader(new FileInputStream("commands.txt")));
+		BufferedReader console = new BufferedReader(new InputStreamReader(new FileInputStream(arg[0])));
 		
 		PrintWriter out = new PrintWriter(connection.getOutputStream());
 		String s;
+		String serverresp;
 		
 		while((s = console.readLine()) != null) {
-			System.out.println(s);
+			System.out.println("CONSOLEINPUT: "+s);
 			out.println(s);
 			out.flush();
-			System.out.println("Server says: "+in.readLine());
+			serverresp=in.readLine();
+			System.out.println("YACHTCLIENT: Server says: "+serverresp);
+			
 		}
 		in.close();
 		out.close();

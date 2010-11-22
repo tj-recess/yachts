@@ -1,3 +1,3 @@
 getAllLoggedInUsers
-Login^Username^Password
+Login^Username2^Password2
 getAllLoggedInUsers

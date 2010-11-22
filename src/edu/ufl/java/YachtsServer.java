@@ -15,7 +15,7 @@ public class YachtsServer {
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			public void run() {
 				try {
-					System.out.println("\nShutting down server");
+					System.out.println("\nYACHTSERVER: Shutting down server");
 					server.close();
 				} catch (IOException e) {}
 			}
@@ -27,16 +27,14 @@ public class YachtsServer {
 			while(true) {
 				connection = server.accept();
 				concurrentconnectioncount++;
-				System.out.println("Got connection #: "+concurrentconnectioncount+
-						"\n Client socket details: \n Conn: connection.toString(): "+connection.toString()+
-						"\nConn: connection.getInetAddress(): "+connection.getInetAddress()+
-						"\nConn: connection.getRemoteSocketAddress(): "+connection.getRemoteSocketAddress());
+				System.out.println("YACHTSERVER: Got connection #: "+concurrentconnectioncount+
+						"\nYACHTSERVER: Conn: connection.getRemoteSocketAddress(): "+connection.getRemoteSocketAddress());
 				
 				ConnectionHandler conn = new ConnectionHandler(connection);
 				conn.start();
 			}
 		} catch (IOException e) {
-			System.err.println("Error in server process: " + e.getMessage());
+			System.err.println("YACHTSERVER: Error in server process: " + e.getMessage());
 			e.printStackTrace();
 		}
 	}
@@ -45,12 +43,12 @@ public class YachtsServer {
 		YachtsServer server = null;
 		if(arg.length == 0) {
 			server = new YachtsServer(5255);
-			System.out.println("Starting Server on port 5255");
+			System.out.println("YACHTSERVER: Starting Server on port 5255");
 		} else if(arg.length == 1) {
 			server = new YachtsServer(Integer.parseInt(arg[0]));
-			System.out.println("Starting Server on port " + arg[0]);
+			System.out.println("YACHTSERVER: Starting Server on port " + arg[0]);
 		} else {
-			System.out.println("Usage: java YachtsServer      -> starts server on default port 5255");
+			System.out.println("YACHTSERVER: Usage: java YachtsServer      -> starts server on default port 5255");
 			System.out.println("       java YachtsServer port -> starts server on given port");
 			System.exit(1);
 		}
@@ -80,6 +78,7 @@ public class YachtsServer {
 			StringTokenizer st = new StringTokenizer(inputstring,"^");
 			boolean flag=true, status;
 			String token ="";
+			String socketinfo = ""+conn.getRemoteSocketAddress();
 			Command cmd = new Command();
 			
 			while(st.hasMoreTokens()){
@@ -87,7 +86,7 @@ public class YachtsServer {
 					// first token
 					token = st.nextToken();
 					
-					System.out.println("Extracted command: "+token);
+					System.out.println("YACHTSERVER: Extracted command: "+token);
 					flag=false;
 					
 					if(token.equalsIgnoreCase("REGISTER")){
@@ -96,7 +95,7 @@ public class YachtsServer {
 					}
 					
 					else if(token.equalsIgnoreCase("LOGIN")){
-						status = cmd.loginCommand(inputstring);
+						status = cmd.loginCommand(inputstring,socketinfo);
 						
 						if (status){
 							// logged in success message
@@ -113,7 +112,7 @@ public class YachtsServer {
 					
 					else if(token.equalsIgnoreCase("getAllLoggedInUsers")){
 						String userlist = cmd.getAllLoggedInUsers(inputstring);
-						System.out.println("User list: "+userlist);
+						System.out.println("YACHTSERVER: User list: "+userlist);
 						return userlist;
 					}
 				}
@@ -129,7 +128,7 @@ public class YachtsServer {
 				
 				while((command = in.readLine())!=null){
 					// receive command
-					System.out.println("Got command: " + command);
+					System.out.println("YACHTSERVER: Got command: " + command);
 					
 					// process command
 					serverresp = processCommand(command);

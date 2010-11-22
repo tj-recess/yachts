@@ -19,20 +19,20 @@ public class Command {
 		}
 		
 		// login processing
-		public boolean loginCommand(String commandstring) {
-			System.out.println("Received login command...");
+		public boolean loginCommand(String commandstring,String socketinfo) {
+			System.out.println("COMMANDPARSER: Received login command...");
 			String[] params = new String[10];
 			
 			params = parse(commandstring);
 			DBManager dbm = new DBManager();
 			
-			return dbm.login(params[1], params[2]);
+			return dbm.login(params[1], params[2],socketinfo);
 			
 		}
 		
 		// registers a new user
 		public boolean registerCommand(String commandstring) {
-			System.out.println("Received register command...");
+			System.out.println("COMMANDPARSER: Received register command...");
 			String[] params = new String[10];
 			
 			params = parse(commandstring);
@@ -42,7 +42,7 @@ public class Command {
 			DBManager dbm = new DBManager();
 			dbm.addUserToDB(newuser);
 			
-			System.out.println("User added to database");
+			System.out.println("COMMANDPARSER: User added to database");
 			return true;
 		}
 
@@ -54,7 +54,7 @@ public class Command {
 
 		public String getAllLoggedInUsers(String inputstring) {
 			// TODO Auto-generated method stub
-			System.out.println("Received getAllLoggedInUsers command...");
+			System.out.println("COMMANDPARSER: Received getAllLoggedInUsers command...");
 			return LoginManager.getLoginManager().getLoggedInUsers();
 		}
 }
