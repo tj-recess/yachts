@@ -1,11 +1,10 @@
 package edu.ufl.java;
 
+import java.util.ArrayList;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;               
 import org.hibernate.Transaction;           
-import org.hibernate.Criteria;              
 import org.hibernate.criterion.Restrictions;
-import org.hibernate.criterion.Order;    
 
 /* manage all database stuff */ 
 public class DBManager {
@@ -17,7 +16,7 @@ public class DBManager {
 			tx=session.beginTransaction();
 			session.save(newuser);
 			session.getTransaction().commit();
-			}
+		}
 		catch (HibernateException he) {
 			if (tx!=null) tx.rollback();
 			throw he;
@@ -26,5 +25,48 @@ public class DBManager {
 			session.close();
 		}
 		return true;
+	}
+	
+	public boolean login(String username, String password){
+		
+		ArrayList<User> u = new ArrayList<User>(); 
+		
+		System.out.println("Searching for username: "+username+" and password: "+password);
+		
+		Session session = HibernateUtils.getSession();			    
+		Transaction tx = null;
+		tx=session.beginTransaction();
+		
+		try{
+			// search for users in the database which matches the specified username
+			u = (ArrayList) (session.createCriteria(User.class)
+					.add( Restrictions.eq("Username", username))
+					.list());
+		
+			// received user data
+			System.out.println("Received user data..\n # of records: "+u.size());
+			
+			// match the password
+			if (u.get(0).getPassword().equals(password)){
+					System.out.println("User authenticated successfully...");
+					
+					// add this user to the list of logged in users.
+					LoginManager.getLoginManager().loginUser(username);
+					
+					return true;
+			}
+		 	else{
+				System.out.println("User login error! Check your credentials");
+				return false;
+			}
+		}
+		catch (HibernateException he) {
+			if (tx!=null) tx.rollback();
+			throw he;
+		}
+		finally {
+			session.close();
+		}
+		//System.out.println("User name: "+userarray.get(0).getFirstName());
 	}
 }

@@ -1,7 +1,5 @@
 package edu.ufl.java;
 
-import java.io.UnsupportedEncodingException;
-import java.security.NoSuchAlgorithmException;
 import java.util.StringTokenizer;
 
 public class Command {
@@ -23,9 +21,13 @@ public class Command {
 		// login processing
 		public boolean loginCommand(String commandstring) {
 			System.out.println("Received login command...");
+			String[] params = new String[10];
 			
+			params = parse(commandstring);
+			DBManager dbm = new DBManager();
 			
-			return true;
+			return dbm.login(params[1], params[2]);
+			
 		}
 		
 		// registers a new user
@@ -42,5 +44,17 @@ public class Command {
 			
 			System.out.println("User added to database");
 			return true;
+		}
+
+		public boolean createSessionCommand(String inputstring) {
+			// TODO Auto-generated method stub
+			
+			return false;
+		}
+
+		public String getAllLoggedInUsers(String inputstring) {
+			// TODO Auto-generated method stub
+			System.out.println("Received getAllLoggedInUsers command...");
+			return LoginManager.getLoginManager().getLoggedInUsers();
 		}
 }
