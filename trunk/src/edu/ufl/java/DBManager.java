@@ -27,11 +27,11 @@ public class DBManager {
 		return true;
 	}
 	
-	public boolean login(String username, String password){
+	public boolean login(String username, String password,String socketinfo){
 		
 		ArrayList<User> u = new ArrayList<User>(); 
 		
-		System.out.println("Searching for username: "+username+" and password: "+password);
+		System.out.println("DBMGR: Searching for username: "+username+" and password: "+password);
 		
 		Session session = HibernateUtils.getSession();			    
 		Transaction tx = null;
@@ -44,19 +44,19 @@ public class DBManager {
 					.list());
 		
 			// received user data
-			System.out.println("Received user data..\n # of records: "+u.size());
+			System.out.println("DBMGR: Received user data..\n # of records: "+u.size());
 			
 			// match the password
 			if (u.get(0).getPassword().equals(password)){
-					System.out.println("User authenticated successfully...");
+					System.out.println("DBMGR: User authenticated successfully...");
 					
 					// add this user to the list of logged in users.
-					LoginManager.getLoginManager().loginUser(username);
+					LoginManager.getLoginManager().loginUser(username,socketinfo);
 					
 					return true;
 			}
 		 	else{
-				System.out.println("User login error! Check your credentials");
+				System.out.println("DBMGR: User login error! Check your credentials");
 				return false;
 			}
 		}
