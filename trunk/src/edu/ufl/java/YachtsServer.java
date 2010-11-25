@@ -106,14 +106,18 @@ public class YachtsServer {
 					}
 					
 					else if(token.equalsIgnoreCase("CreateSession")){
-						status = cmd.createSessionCommand(inputstring);
-						return "";
+						String sessionCreationStatus = cmd.createSessionCommand(inputstring);
+						return sessionCreationStatus;
 					}
 					
 					else if(token.equalsIgnoreCase("getAllLoggedInUsers")){
 						String userlist = cmd.getAllLoggedInUsers(inputstring);
 						System.out.println("YACHTSERVER: User list: "+userlist);
 						return userlist;
+					}
+					else{
+						// unknown command
+						System.out.println("YACHTSERVER: ERROR: Unknown command from Client");
 					}
 				}
 			}

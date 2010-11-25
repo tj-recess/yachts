@@ -69,4 +69,35 @@ public class DBManager {
 		}
 		//System.out.println("User name: "+userarray.get(0).getFirstName());
 	}
+	public static User getUser(String username){
+		
+			ArrayList<User> u = new ArrayList<User>(); 
+			
+			System.out.println("DBMGR: Searching for username: "+username);
+			
+			Session session = HibernateUtils.getSession();			    
+			Transaction tx = null;
+			tx=session.beginTransaction();
+			
+			try{
+				// search for users in the database which matches the specified username
+				u = (ArrayList) (session.createCriteria(User.class)
+						.add( Restrictions.eq("Username", username))
+						.list());
+			
+				// received user data
+				System.out.println("DBMGR: Received user data..\n # of records: "+u.size());
+				if (u.size()>0)
+					return u.get(0);
+				else 
+					return null;
+			}
+			catch (HibernateException he) {
+				if (tx!=null) tx.rollback();
+				throw he;
+			}
+			finally {
+				session.close();
+			}		
+	}
 }

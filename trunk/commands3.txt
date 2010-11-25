@@ -1,0 +1,4 @@
+getAllLoggedInUsers
+Login^Username3^Password3
+getAllLoggedInUsers
+CreateSession

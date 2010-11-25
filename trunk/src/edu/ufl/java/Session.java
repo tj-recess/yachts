@@ -7,16 +7,45 @@ public class Session {
 	private boolean isGroupChat;
 	private int sessionID;
 	private String receivedText;
+	private static int sessionNum=1;
 	
+	public static int getSessionNum() {
+		return sessionNum;
+	}
+
+	public int getSessionID() {
+		return sessionID;
+	}
+
+	public void setSessionID(int sessionID) {
+		this.sessionID = sessionID;
+	}
+
+
+	
+
+
+
 	/*
 	 * Create a new session
 	 * */
 	public Session(boolean isgroupchat){
 		this.isGroupChat = isgroupchat;
 		this.receivedText="Chat log \n";
-		//this.sessionID = 
+		this.sessionID = getNextSessionID();
+		this.userList = new  ArrayList<User>();
+		System.out.println("SESSION: Session created. Session ID: "+this.sessionID);
 	}
 	
+	
+	
+	private int getNextSessionID() {
+		// TODO Auto-generated method stub
+		return sessionNum++;
+	}
+
+
+
 	/*
 	 * return list of users in current session.
 	 * */
@@ -28,9 +57,20 @@ public class Session {
 		/* get active sessions of a user */
 		ArrayList<Integer> ai = someUser.getActiveSessionIDList();
 		
+		System.out.println("SESSION: Adding User: "+someUser.getUsername()+" to session:  "+this.sessionID);
+		
 		/* add this session id */
-		if (!ai.contains(this.sessionID))
+		
+		if(ai==null){
+			// create new array list
+			ai = new ArrayList<Integer> ();
 			ai.add(this.sessionID);
+		}
+		else{
+			// check if user is already in this session
+			if (!someUser.containsSession(this.sessionID))
+				ai.add(this.sessionID);
+		}
 		
 		/* store list of session ids back */
 		someUser.setActiveSessionIDList(ai);
@@ -40,6 +80,8 @@ public class Session {
 	}
 	
 	public boolean removeUser(User someUser){
+		System.out.println("SESSION: Removing User: "+someUser.getUsername()+" from session:  "+this.sessionID);
+		
 		return this.userList.remove(someUser);
 	}
 	public void acceptAndDisplayText(User fromUser, String text){

@@ -80,7 +80,8 @@ public class User {
 		this.Username=username;
 		this.Location=location;
 		this.EmailAddress=email;
-		this.Password=password;
+		this.Password=password; // played a bit with md5 but did not get it working - sorry.
+		this.activeSessionIDList= new ArrayList<Integer>();
 		
 		 //converting password to md5 hash
 		/*try{
@@ -107,5 +108,13 @@ public class User {
 
 	public int getUserID() {
 		return UserID;
+	}
+	public boolean containsSession(int sessionID){
+		
+		if(this.activeSessionIDList!= null){
+			if(this.activeSessionIDList.contains(sessionID))
+				return true;
+		}
+		return false;
 	}
 }
