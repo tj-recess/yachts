@@ -46,6 +46,6 @@ public class LoginManager {
         }
         
         public String getLoggedInUsers(){
-        	return loggedInUsersMap.keySet().toString();
+        	return "LoggedInUsers^"+loggedInUsersMap.keySet().toString().replace('[', ' ').replace(']', ' ').replace(',','^').replaceAll(" ", "");
         }
 }

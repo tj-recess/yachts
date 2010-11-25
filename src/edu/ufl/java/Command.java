@@ -1,6 +1,7 @@
 package edu.ufl.java;
 
 import java.util.StringTokenizer;
+import org.apache.commons.lang.*;
 
 public class Command {
 		
@@ -46,10 +47,29 @@ public class Command {
 			return true;
 		}
 
-		public boolean createSessionCommand(String inputstring) {
+		public String createSessionCommand(String inputstring) {
 			// TODO Auto-generated method stub
+			System.out.println("COMMANDPARSER: received create session command ");
+			String[] params = new String[10];
+			String userList="";
 			
-			return false;
+			params = parse(inputstring);
+			
+			try{
+				// register the session
+				Session session = new Session(true); // this is a group chat - true for all cases
+				
+				for (int i=1; i<=StringUtils.countMatches(inputstring, "^");i++){
+					session.addUser(DBManager.getUser(params[i])); // add all users to session
+					userList += "^"+params[i];
+				}
+				return "CreateSessionResponse^SUCCESS^"+session.getSessionID()+userList;
+			
+			}catch(Exception e){
+				System.out.println("COMMANDPARSER: ERROR: ");
+				e.printStackTrace();
+				return "CreateSessionResponse^ERROR";
+			}
 		}
 
 		public String getAllLoggedInUsers(String inputstring) {
