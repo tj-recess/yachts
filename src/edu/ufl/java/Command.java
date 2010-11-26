@@ -1,5 +1,8 @@
 package edu.ufl.java;
 
+import java.io.PrintWriter;
+import java.net.Socket;
+import java.util.ArrayList;
 import java.util.StringTokenizer;
 import org.apache.commons.lang.*;
 
@@ -20,14 +23,16 @@ public class Command {
 		}
 		
 		// login processing
-		public boolean loginCommand(String commandstring,String socketinfo) {
+		public boolean loginCommand(String commandstring,String socketinfo,Socket conn) {
 			System.out.println("COMMANDPARSER: Received login command...");
+			System.out.println("COMMANDPARSER: Socket Details: "+conn);
+			
 			String[] params = new String[10];
 			
 			params = parse(commandstring);
 			DBManager dbm = new DBManager();
 			
-			return dbm.login(params[1], params[2],socketinfo);
+			return dbm.login(params[1], params[2],socketinfo,conn);
 			
 		}
 		
@@ -51,7 +56,8 @@ public class Command {
 			// TODO Auto-generated method stub
 			System.out.println("COMMANDPARSER: received create session command ");
 			String[] params = new String[10];
-			String userList="";
+			String userList="", successmesg="";
+			ArrayList<String> usersInSession = new ArrayList<String>();
 			
 			params = parse(inputstring);
 			
@@ -60,13 +66,27 @@ public class Command {
 				Session session = new Session(true); // this is a group chat - true for all cases
 				
 				for (int i=1; i<=StringUtils.countMatches(inputstring, "^");i++){
-					session.addUser(DBManager.getUser(params[i])); // add all users to session
+					User u = DBManager.getUser(params[i]);
+					session.addUser(u); // add all users to session
 					userList += "^"+params[i];
+					usersInSession.add(params[i]);
+					System.out.println("User's connection details: "+LoginManager.getLoginManager().loggedInUsersSockets.get(params[i]));
 				}
-				return "CreateSessionResponse^SUCCESS^"+session.getSessionID()+userList;
-			
+				successmesg = "CreateSessionResponse^SUCCESS^"+session.getSessionID()+userList;
+				// send message to all users in session
+				
+				// inform to each user
+				for (int j=0;j<usersInSession.size();j++){
+					Socket s = LoginManager.getLoginManager().loggedInUsersSockets.get(usersInSession.get(j));
+					PrintWriter pw = new PrintWriter(s.getOutputStream());
+					pw.println(successmesg);
+					pw.flush();
+				}
+					
+				return successmesg;
+				
 			}catch(Exception e){
-				System.out.println("COMMANDPARSER: ERROR: ");
+				System.out.println("COMMANDPARSER: ERROR: Error in Creating Session");
 				e.printStackTrace();
 				return "CreateSessionResponse^ERROR";
 			}

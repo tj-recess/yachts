@@ -95,7 +95,8 @@ public class YachtsServer {
 					}
 					
 					else if(token.equalsIgnoreCase("LOGIN")){
-						status = cmd.loginCommand(inputstring,socketinfo);
+						System.out.println("YACHTSERVER: Login: Client socket details: "+this.conn);
+						status = cmd.loginCommand(inputstring,socketinfo,this.conn);
 						
 						if (status){
 							// logged in success message

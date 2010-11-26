@@ -66,7 +66,9 @@ public class YachtsClient {
 				
 			}
 		}
-		Thread.sleep(10000);
+		while((serverresp=in.readLine())!="BYE"){
+			System.out.println("YACHTCLIENT: Server Response: "+serverresp);
+		}
 		in.close();
 		out.close();
 		console.close();

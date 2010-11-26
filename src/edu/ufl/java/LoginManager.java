@@ -1,6 +1,6 @@
 package edu.ufl.java;
 
-import java.util.ArrayList;
+import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -10,7 +10,7 @@ public class LoginManager {
 		// and their ip/port config - so using hashmap instead
 	
         Map<String,String> loggedInUsersMap = new HashMap<String,String>();
-        
+        Map<String,Socket> loggedInUsersSockets = new HashMap<String,Socket>();
         
         /* the only instance of this class */
         private static LoginManager loginmgr = new LoginManager();
@@ -25,11 +25,12 @@ public class LoginManager {
         public boolean logoutUser(String username){
         		System.out.println("LOGINMGR: Removing user from logged in users list "+username);
         		String userremoved = loggedInUsersMap.remove(username); 
+        		loggedInUsersSockets.remove(username);
         		System.out.println("LOGINMGR: User Removed: "+userremoved);
         		return true;
         }
         
-        public boolean loginUser(String username,String socketinfo){
+        public boolean loginUser(String username,String socketinfo, Socket usersocket){
                 /* put the user in the logged in users list */
         		System.out.println("LOGINMGR: Adding user to logged in users list: "+username);
         		if(loggedInUsersMap.containsKey(username)){
@@ -40,6 +41,7 @@ public class LoginManager {
         		else{
         			// user added to list of logged in users.
         			loggedInUsersMap.put(username,socketinfo);
+        			loggedInUsersSockets.put(username, usersocket);
                 	System.out.println("LOGINMGR: Added User: "+username+"\t Socket Details: "+socketinfo);
                 	return true;
         		}
