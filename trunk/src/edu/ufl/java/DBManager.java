@@ -1,5 +1,7 @@
 package edu.ufl.java;
 
+import java.io.PrintWriter;
+import java.net.Socket;
 import java.util.ArrayList;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;               
@@ -27,7 +29,7 @@ public class DBManager {
 		return true;
 	}
 	
-	public boolean login(String username, String password,String socketinfo){
+	public boolean login(String username, String password,String socketinfo, Socket conn){
 		
 		ArrayList<User> u = new ArrayList<User>(); 
 		
@@ -51,7 +53,7 @@ public class DBManager {
 					System.out.println("DBMGR: User authenticated successfully...");
 					
 					// add this user to the list of logged in users.
-					LoginManager.getLoginManager().loginUser(username,socketinfo);
+					LoginManager.getLoginManager().loginUser(username,socketinfo,conn);
 					
 					return true;
 			}

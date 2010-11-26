@@ -1,5 +1,6 @@
 package edu.ufl.java;
 
+import java.net.Socket;
 import java.util.ArrayList;
 
 public class User {
