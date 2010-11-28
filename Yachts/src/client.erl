@@ -9,10 +9,19 @@ client(PortNo,Message) ->
     Status = gen_tcp:connect("localhost",PortNo,[{active,false},{packet,0}]),
     case Status of
 		{ok,Sock} ->
-			gen_tcp:send(Sock,Message),
-			io:format("Socket ~w ~n",[Sock]),
-			A = gen_tcp:recv(Sock,0),
-    		io:format("client ~w received data : ~w ~n",[Sock, A]);
+			case gen_tcp:send(Sock,Message) of
+				ok ->
+					io:format("Socket ~w sent data : ~w ~n",[Sock, list_to_atom(Message)]),
+					case gen_tcp:recv(Sock,0, 5000) of
+						{ok, Data} ->
+							io:format("client ~p received data : ~w ~n",[Sock, list_to_atom(Data)]);
+					
+						{error, Reason} ->
+							io:format("client ~p received error, Reason: ~w ~n",[Sock, Reason])
+					end;
+				{error, Reason} ->
+					io:format("client ~p : error in sending data. ~n Error : ~w ~n ",[Sock, Reason])
+			end;
 		{error, Msg} ->
 			io:format("Error in Socket creation ~w",Msg)
 	end.
