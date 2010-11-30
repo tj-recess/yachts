@@ -2,7 +2,8 @@
 %% Created: Nov 25, 2010
 %% Description: TODO: Add description to user
 -module(user).
--import(userManager, sessionManager).
+-import(userManager).
+-import(sessionManager).
 %%
 %% Include files
 %%
@@ -45,7 +46,8 @@ handleClient(ClientSocket) ->
 				badinput ->
 					Status = "BadQuery^User need to login first"
 			end,
-			gen_tcp:send(ClientSocket, list_to_binary(Status));
+			gen_tcp:send(ClientSocket, list_to_binary(Status)),
+			handleClient(ClientSocket);
         {error, closed} ->
             ok
     end.
