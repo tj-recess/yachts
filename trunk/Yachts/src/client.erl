@@ -14,7 +14,7 @@ client(PortNo,Message) ->
 					io:format("Socket ~w sent data : ~w ~n",[Sock, Message]),
 					case gen_tcp:recv(Sock,0, 5000) of
 						{ok, Data} ->
-							io:format("client ~p received data : ~w ~n",[Sock, binary_to_list(Data)]);
+							io:format("client ~p received data : ~w ~n",[Sock, list_to_atom(Data)]);
 					
 						{error, Reason} ->
 							io:format("client ~p received error, Reason: ~w ~n",[Sock, Reason])
