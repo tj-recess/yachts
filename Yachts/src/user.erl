@@ -2,7 +2,7 @@
 %% Created: Nov 25, 2010
 %% Description: TODO: Add description to user
 -module(user).
-
+-import(userManager, sessionManager).
 %%
 %% Include files
 %%
@@ -24,7 +24,7 @@ handleClient(ClientSocket) ->
     case gen_tcp:recv(ClientSocket, 0) of
         {ok, Data} ->
 			io:format("user sent ~w", [Data]),
-			gen_tcp:send(ClientSocket, "data from handle client"),
+			%gen_tcp:send(ClientSocket, "data from handle client"),
 			%%Parse the data first and take appropriate action
             case parseClientMessage(Data) of
 				{register,[Username, Password, FirstName, LastName, Location, EmailId]} ->
@@ -42,10 +42,10 @@ handleClient(ClientSocket) ->
 						{timeout,Reason} -> 
 							Status = string:join(["LoginResponse"|["failure"|Reason]], "^")
 					end;
-				_ ->
+				badinput ->
 					Status = "BadQuery^User need to login first"
 			end,
-			gen_tcp:send(ClientSocket, Status);
+			gen_tcp:send(ClientSocket, list_to_binary(Status));
         {error, closed} ->
             ok
     end.
@@ -57,7 +57,7 @@ handleClient(ClientSocket) ->
 %%
 
 parseClientMessage(Msg)->
-       [H|T]= string:tokens(Msg,"^"),
+       [H|T]= string:tokens(binary_to_list(Msg),"^"),
        case string:to_lower(H) of
        		"register" ->
 				{register,T};
@@ -70,7 +70,9 @@ parseClientMessage(Msg)->
 		   "chat" ->
 			   {chat, T};
 		   "getallloggedinusers" ->
-			   getAllLoggedInUsers
+			   getAllLoggedInUsers;
+		   _ ->
+			   badinput
        end.
 
 userLoop(ClientSocket) ->
@@ -93,7 +95,7 @@ userLoop(ClientSocket) ->
 				getAllLoggedInUsers ->
 					LoggedInUsersList = users:getAllLoggedInUsers(),
 					Status = string:join(["LoggedInUsers"|LoggedInUsersList],"^"),
-					gen_tcp:send(ClientSocket, Status)
+					gen_tcp:send(ClientSocket, binary_to_list(Status))
 			end;
 			
 	{error, closed} ->
@@ -126,5 +128,5 @@ userLoop(ClientSocket) ->
 			userLoop(ClientSocket)
 		end,
 
-	gen_tcp:send(ClientSocket, ResponseMsg),
+	gen_tcp:send(ClientSocket, list_to_binary(ResponseMsg)),
 	userLoop(ClientSocket).

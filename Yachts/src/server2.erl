@@ -18,8 +18,8 @@ accept(LSocket) ->
 
 % Echo back whatever data we receive on Socket.
 loop(Socket) ->
-	user:dummy(Socket).
-%% 	user:handleClient(Socket).
+%% 	user:dummy(Socket),
+	user:handleClient(Socket).
 %%     case gen_tcp:recv(Socket, 0) of
 %%         {ok, Data} ->
 %%             gen_tcp:send(Socket, "loginResponse^success^Message"),
