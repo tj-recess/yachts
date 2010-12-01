@@ -22,7 +22,8 @@ start()->
 
 initRegisteredUserList()->
 	application:start(odbc),
-	ConnString="Driver={MySQL ODBC 5.1 Driver};Server=localhost;Database=yachts;User=root;Password=root;Option=3;",
+	WinConnString="Driver={MySQL ODBC 5.1 Driver};Server=localhost;Database=yachts;User=root;Password=root;Option=3;",
+	ConnString="DSN=yachts;UID=root;PWD=root",
 	{ok, Conn}=odbc:connect(ConnString, []),
 	loginManagerDB(dict:new(), Conn).
 
