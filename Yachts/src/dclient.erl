@@ -17,23 +17,27 @@ loopWrite(Sock)->
 			io:format("Message received from ~p =  ~w ~n",[From, Message]),
 			case gen_tcp:send(Sock,Message) of
 				ok ->
-					io:format("Socket ~w sent data : ~w ~n",[Sock, Message]),
-					case gen_tcp:recv(Sock,0, 5000) of
-						{ok, Data} ->
-							From ! {ok,Sock,Data},
-							loopWrite(Sock);
-					
-						{error, Reason} ->
-							From ! {error,Sock,Reason},
-							loopWrite(Sock)
-					end;
+					io:format("Socket ~w sent data : ~w ~n",[Sock, Message]);
+
 				{error, Reason} ->
-					From ! {sendErr,Sock,Reason},
-					loopWrite(Sock)
-					
-			end;
-			
+					From ! {sendErr,Sock,Reason}					
+			end,
+			loopWrite(Sock);
+		
 		_ -> loopWrite(Sock)
+
+		after 20 ->
+			case  gen_tcp:recv(Sock,0, 20) of
+			{ok, Data} ->
+				  io:format("client ~p received data : ~w ~n",[Sock, list_to_atom(Data)]);
+
+ 			{error, timeout} ->				
+ 				io:format("");
+			{error, Reason} ->
+				io:format("client ~p received error, Reason: ~w ~n",[Sock, Reason])				
+			end,
+
+			loopWrite(Sock)	
 	end.
 
 loopListen(Sock)->
@@ -52,13 +56,13 @@ loopListen(Sock)->
 		
 
 send(Pid,Message)->
-	Pid ! {self(),list_to_binary(Message)},
-	receive
-		{ok,Sock,Data} -> io:format("client ~p received data : ~w ~n",[Sock, list_to_atom(Data)]);
-		{error,Sock,Reason} -> io:format("client ~p received error, Reason: ~w ~n",[Sock, Reason]);
-		{sendErr,Sock,Reason} ->io:format("client ~p : error in sending data. ~n Error : ~w ~n ",[Sock, Reason]);
-		_->io:format("end")
-	end.	
+	Pid ! {self(),list_to_binary(Message)}.
+%% 	receive
+%% 		{ok,Sock,Data} -> io:format("client ~p received data : ~w ~n",[Sock, list_to_atom(Data)]);
+%% 		{error,Sock,Reason} -> io:format("client ~p received error, Reason: ~w ~n",[Sock, Reason]);
+%% 		{sendErr,Sock,Reason} ->io:format("client ~p : error in sending data. ~n Error : ~w ~n ",[Sock, Reason]);
+%% 		_->io:format("end")
+%% 	end.	
 		
 recv(Pid)->
 	Pid ! {self(),recv},
