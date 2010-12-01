@@ -1,12 +1,16 @@
 -module(server2).
 -compile(export_all).
 -import(user).
+-import(userManager).
+%% -import(sessionManager).
 
 -define(TCP_OPTIONS, [binary, { active, false}, { packet, 0 } , {reuseaddr, true}]).
 
 
 % Call echo:listen(Port) to start the service.
 listen(Port) ->
+	userManager:start(),
+%% 	sessionManager:start(),
     {ok, LSocket} = gen_tcp:listen(Port, ?TCP_OPTIONS),
     accept(LSocket).
 

@@ -24,30 +24,30 @@ dummy(ClientSocket) ->
 handleClient(ClientSocket) ->
     case gen_tcp:recv(ClientSocket, 0) of
         {ok, Data} ->
-			io:format("user sent ~w", [Data]),
+			D = binary_to_list(Data),
+			io:format("user sent ~w", [D]),
 			%gen_tcp:send(ClientSocket, "data from handle client"),
 			%%Parse the data first and take appropriate action
-            case parseClientMessage(Data) of
+            case parseClientMessage(D) of
 				{register,[Username, Password, FirstName, LastName, Location, EmailId]} ->
 					io:format("User sent : register"),
 					Status = userManager:registerUser(Username, Password, FirstName, LastName, Location, EmailId);
-				{login, Username, Password} ->
+				{login, [Username, Password]} ->
 					io:format("User sent : login"),
 					Result = userManager:loginUser(self(), Username, Password),
 					case Result of
 						{true, Reason} -> 
-							Status = string:join(["LoginResponse"|["success"|Reason]], "^"),
+							Status = string:join(["LoginResponse","success",Reason], "^"),
 							userLoop(ClientSocket);
 						{false,Reason} ->
-							Status = string:join(["LoginResponse"|["failure"|Reason]], "^");
+							Status = string:join(["LoginResponse","failure",Reason], "^");
 						{timeout,Reason} -> 
-							Status = string:join(["LoginResponse"|["failure"|Reason]], "^")
+							Status = string:join(["LoginResponse","failure",Reason], "^")
 					end;
-				badinput ->
-					Status = "BadQuery^User need to login first"
+				_ ->
+					Status = ["BadQuery^User need to login first"]
 			end,
-			gen_tcp:send(ClientSocket, list_to_binary(Status)),
-			handleClient(ClientSocket);
+			gen_tcp:send(ClientSocket, list_to_binary(Status));
         {error, closed} ->
             ok
     end.
@@ -59,7 +59,7 @@ handleClient(ClientSocket) ->
 %%
 
 parseClientMessage(Msg)->
-       [H|T]= string:tokens(binary_to_list(Msg),"^"),
+       [H|T]= string:tokens(Msg,"^"),
        case string:to_lower(H) of
        		"register" ->
 				{register,T};
@@ -73,6 +73,8 @@ parseClientMessage(Msg)->
 			   {chat, T};
 		   "getallloggedinusers" ->
 			   getAllLoggedInUsers;
+		   "logout" ->
+			   logout;
 		   _ ->
 			   badinput
        end.
@@ -96,8 +98,10 @@ userLoop(ClientSocket) ->
 
 				getAllLoggedInUsers ->
 					LoggedInUsersList = users:getAllLoggedInUsers(),
-					Status = string:join(["LoggedInUsers"|LoggedInUsersList],"^"),
+					Status = string:join(["LoggedInUsers",LoggedInUsersList],"^"),
 					gen_tcp:send(ClientSocket, binary_to_list(Status))
+				logout ->
+					done
 			end;
 			
 	{error, closed} ->
@@ -108,23 +112,23 @@ userLoop(ClientSocket) ->
 		%%otherwise just wait for another 100 ms for other process to send some data	
 		receive
 			{createSessionResponse, success, Response} -> 
-				ResponseMsg = string:join(["CreateSessionResponse"|["success"|Response]], "^");
+				ResponseMsg = string:join(["CreateSessionResponse","success",Response], "^");
 			{createSessionResponse, failure,Reason} ->
 				ResponseMsg = string:join(["CreateSessionResponse","failure",Reason], "^");
 			{createSessionResponse, timeout,Reason} -> 
 				ResponseMsg = string:join(["CreateSessionResponse","timeout",Reason], "^");
 			{addUserToSessionResponse, success, Response} -> 
-				ResponseMsg = string:join(["addUserToSessionResponse"|["success"|Response]], "^");
+				ResponseMsg = string:join(["addUserToSessionResponse","success",Response], "^");
 			{addUserToSessionResponse, failure,Reason} ->
-				ResponseMsg = string:join(["addUserToSessionResponse"|["failure"|Reason]], "^");
+				ResponseMsg = string:join(["addUserToSessionResponse","failure",Reason], "^");
 			{addUserToSessionResponse, timeout,Reason} -> 
-				ResponseMsg = string:join(["addUserToSessionResponse"|["timeout"|Reason]], "^");
+				ResponseMsg = string:join(["addUserToSessionResponse","timeout",Reason], "^");
 			{chatResponse, success, Response} ->
-				ResponseMsg = string:join(["chatResponse"|["success"|Response]],"^");
+				ResponseMsg = string:join(["chatResponse","success",Response],"^");
 			{chatResponse, failure, Reason} ->
-				ResponseMsg = string:join(["chatResponse"|["failure"|Reason]],"^");
+				ResponseMsg = string:join(["chatResponse","failure",Reason],"^");
 			{chatResponse, timeout, Reason} ->
-				ResponseMsg = string:join(["chatResponse"|["timeout"|Reason]],"^")
+				ResponseMsg = string:join(["chatResponse","timeout",Reason],"^")
 		after 100 ->
 			ResponseMsg = "",%%this will never be sent because we call the loop immediately
 			userLoop(ClientSocket)

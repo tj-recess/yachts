@@ -17,7 +17,7 @@
 %%dwai, password, firstName, lastName, location, emailId
 
 start()->
-	Pid = spawn(users, initRegisteredUserList, []),
+	Pid = spawn(?MODULE, initRegisteredUserList, []),
 	register(loginManager, Pid).
 
 initRegisteredUserList()->
@@ -39,6 +39,7 @@ registerUser(Username, Password, FirstName, LastName, Location, EmailId)
 	end.
 
 loginUser(UserPid, Username, Password)->
+	io:format("received params : ~w ~w ~w ~n",[UserPid,Username, Password]),
 	loginManager ! {self() , login , Username, Password, UserPid},
 	receive
 		already -> {true, "user already logged in."};
@@ -102,7 +103,7 @@ loginManagerDB(LoggedInUserList, Conn)->
 					case Result of %%accepting first record from the returned data
 						%% ideally, only one record should have returned.
 						{selected, _, []} ->
-							From ! {failure, "User doesn't exists in system!!"},
+							From ! failure,
 							loginManagerDB(LoggedInUserList, Conn);
 						{selected, _, [H|_]} -> 
 							NewList = dict:append(Username, {H,UserPid}, LoggedInUserList),
