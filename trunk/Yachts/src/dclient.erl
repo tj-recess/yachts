@@ -6,15 +6,15 @@
 
 
 client(PortNo) ->
-    {ok,Sock} = gen_tcp:connect("localhost",PortNo,[{active,false},{packet,0}]),
+    {ok,Sock} = gen_tcp:connect("localhost",PortNo,[binary, {active,false},{packet,0}]),
     W=spawn(dclient,loopWrite,[Sock]),
 	%L=spawn(client,loopListen,[Sock]),
-	{W}.
+	W.
 	
 loopWrite(Sock)->
 	receive
 		{From,Message} ->
-			io:format("Message received from ~p =  ~w ~n",[From, Message]),
+%% 			io:format("Message received from ~p =  ~w ~n",[From, Message]),
 			case gen_tcp:send(Sock,Message) of
 				ok ->
 					io:format("Socket ~w sent data : ~w ~n",[Sock, Message]);
