@@ -10,18 +10,17 @@
 %%
 %% Exported Functions
 %%
--export([createSession/1,addUsersToSession/1,chat/1]).
-
+-compile(export_all).
 %%
 %% API Functions
 %%
 
 start()->
-	PID=spawn(sessionManager, initSessionManagerList, []),
-	register(sessionManager,PID).
+	PID=spawn(?MODULE, initSessionList, []),
+	register(sessionManagerPid,PID).
 	
 	
-initSessionManagerList()->
+initSessionList()->
 	sessionList(dict:new(),0).
 %% sessionList contains key value pairs of the form 
 %%( Index : {Nummber of users in session[index], [user list in session[index]} )	
@@ -31,14 +30,14 @@ createSession(UserList)->
 		case loginManager:getUserInfo(User1) of
 			error -> {addUsersToSessionResponse,false,["Invalid Username"]};
 				 _->
-				sessionManager ! {create,UserList}			
+				sessionManagerPid ! {create,UserList}			
 		end.
 		
 addUsersToSession({SessionID,[User1|T]})->
 	case loginManager:getUserInfo(User1) of
 			error -> {addUsersToSessionResponse,false,["Invalid Username"]};
 			{_,UserPid} ->
-				sessionManager ! {add,SessionID,User1,T,UserPid}							
+				sessionManagerPid ! {add,SessionID,User1,T,UserPid}							
 	end.	
 	
 
@@ -46,7 +45,7 @@ chat({User,SessionID,Message})->
 		case loginManager:getUserInfo(User) of
 			error -> {chat,false,["Invalid Username"]};
 			{_,UserPid} ->
-				sessionManager ! {chat,{User,SessionID,Message,UserPid}}							
+				sessionManagerPid ! {chat,{User,SessionID,Message,UserPid}}							
 		end.	
 
 sessionList(SessionList,Count)->
