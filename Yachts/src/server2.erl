@@ -12,7 +12,7 @@ listen(Port) ->
 	userManager:start(),
 	sessionManager:start(),
     {ok, LSocket} = gen_tcp:listen(Port, ?TCP_OPTIONS),
-    accept(LSocket).
+    spawn(fun() -> accept(LSocket) end).
 
 % Wait for incoming connections and spawn the echo loop when we get one.
 accept(LSocket) ->

@@ -32,23 +32,23 @@ registerUser(Username, Password, FirstName, LastName, Location, EmailId)
   -> loginManager ! {self(), register, {Username, Password, FirstName, LastName, Location, EmailId}},
 	receive
 		success ->
-			{success,"User logged in successfully"};
+			{success,["User logged in successfully"]};
 		{error, Reason} ->
-			{failure, Reason}
+			{failure, [Reason]}
 	after 5000 -> 
-		{timeout,"Operation timed out, Try again later!"}
+		{timeout,["Operation timed out, Try again later!"]}
 	end.
 
 loginUser(UserPid, Username, Password)->
 	io:format("received params : ~w ~w ~w ~n",[UserPid,Username, Password]),
 	loginManager ! {self() , login , Username, Password, UserPid},
 	receive
-		already -> {true, "user already logged in."};
-		success -> {true, "user logged in successfully."};
-		failure -> {false, "Incorrect Username or Password."};
+		already -> {true, ["user already logged in."]};
+		success -> {true, ["user logged in successfully."]};
+		failure -> {false,["Incorrect Username or Password."]};
 		Result -> Result
 	after 2000 ->
-		UserPid ! {timeout, "Operation timed out, Try again later!"}
+		UserPid ! {timeout, ["Operation timed out, Try again later!"]}
 	end.
 
 getAllLoggedInUsers() ->
