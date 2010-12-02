@@ -20,7 +20,7 @@ loopWrite(Sock)->
 					io:format("Socket ~w sent data : ~w ~n",[Sock, Message]);
 
 				{error, Reason} ->
-					From ! {sendErr,Sock,Reason}					
+					io:format("client ~p encountered error while sending data, Reason: ~w ~n",[Sock, Reason])
 			end,
 			loopWrite(Sock);
 		
@@ -29,12 +29,12 @@ loopWrite(Sock)->
 		after 20 ->
 			case  gen_tcp:recv(Sock,0, 20) of
 			{ok, Data} ->
-				  io:format("client ~p received data : ~w ~n",[Sock, list_to_atom(Data)]);
+				  io:format("client ~p received data : ~w ~n",[Sock, Data]);
 
  			{error, timeout} ->				
  				io:format("");
 			{error, Reason} ->
-				io:format("client ~p received error, Reason: ~w ~n",[Sock, Reason])				
+				io:format("client ~p encountered error while receiving, Reason: ~w ~n",[Sock, Reason])				
 			end,
 
 			loopWrite(Sock)	
