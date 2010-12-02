@@ -57,9 +57,10 @@ addUsersToSession({SessionID,[User1|T]})->
 	
 chat({User,SessionID,Message})->
 		case userManager:getUserInfo(User) of
-			error -> {chat,false,["Invalid Username"]};
+			error -> 
+				{chatResponse,false,["Invalid Username"]};
 			{ok,[{_,UserPid}]} ->
-				sessionManagerPid ! {chat,{User,SessionID,Message,UserPid}}							
+				sessionManagerPid ! {chat,User,SessionID,Message,UserPid}							
 		end.	
 
 sessionList(SessionList,Count)->
@@ -95,22 +96,26 @@ sessionList(SessionList,Count)->
 					sessionList(SessionList, Count)
 			
 			end;
-		 {chat,{User,SessionID,Message,UserPid}}->
+		 {chat,User,SessionID,Message,UserPid}->
 			case dict:find(SessionID, SessionList) of
 				error -> %% if SessionID is invalid 
-					UserPid ! {chatResponse,failure,["Invalid Session ID"]};
+					UserPid ! {chatResponse,failure,["Invalid Session ID"]},
+					sessionList(SessionList,Count);
 				{ok, [{Name,UsersInSession}] } -> %% if SessionID is valid then Name is the Pid of the Process Group
 					Present=lists:member(User, UsersInSession),
 						if 
 							Present -> %% If User is part of the session
-								Name ! {chatResponse,success,[string:join([integer_to_list(Name),User,Message],":")]};
+								TotalUsersPids= pg2:get_members(SessionID),
+								sendMessage(TotalUsersPids,{chatResponse,success,[string:join([integer_to_list(Name),User,Message],":")]}),
+								sessionList(SessionList,Count);
 							Present == false ->
-								UserPid ! {chatResponse,failure,["User not part of session"]}
-						end
-			
-			end,
-			sessionList(SessionList,Count)
-			
+								UserPid ! {chatResponse,failure,["User not part of session"]},
+								sessionList(SessionList,Count)
+						end;
+				Weird ->
+					io:format("received weird value : ~w ~n",[Weird]),
+					sessionList(SessionList, Count)
+			end		
 	end.
 
 %%Helper functions for sessionList
