@@ -34,8 +34,10 @@ loopWrite(Sock)->
  			{error, timeout} ->				
  				io:format(""),
 				loopWrite(Sock);
-			{error, ebadf} ->
+			{error, closed} ->
 				io:format("server down!!! ~n Client will be terminated now...Done.");
+			{error, ebadf} ->
+				io:format("server down!!! ~n Client will be terminated now...Done.");			
 			{error, Reason} ->
 				io:format("client ~p encountered error while receiving, Reason: ~w ~n",[Sock, Reason]),
 				loopWrite(Sock)

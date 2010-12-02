@@ -34,14 +34,14 @@ handleClient(ClientSocket) ->
 					Result = userManager:registerUser(Username, Password, FirstName, LastName, Location, EmailId),
 					case Result of
 						{success, Reason} -> 
-							Status = string:join(["RegisterResponse","success",Reason], "^"),
+							Status = string:join(["RegisterResponse","success"|Reason], "^"),
 							gen_tcp:send(ClientSocket, list_to_binary(Status)),
 							userLoop(ClientSocket);
 						{failure,Reason} ->
-							Status = string:join(["RegisterResponse","failure",Reason], "^"),
+							Status = string:join(["RegisterResponse","failure"|Reason], "^"),
 							gen_tcp:send(ClientSocket, list_to_binary(Status));
 						{timeout,Reason} -> 
-							Status = string:join(["RegisterResponse","failure",Reason], "^"),
+							Status = string:join(["RegisterResponse","failure"|Reason], "^"),
 							gen_tcp:send(ClientSocket, list_to_binary(Status))
 					end,
 					gen_tcp:send(ClientSocket, list_to_binary(Status));
@@ -50,14 +50,14 @@ handleClient(ClientSocket) ->
 					Result = userManager:loginUser(self(), Username, Password),
 					case Result of
 						{true, Reason} -> 
-							Status = string:join(["LoginResponse","success",Reason], "^"),
+							Status = string:join(["LoginResponse","success"|Reason], "^"),
 							gen_tcp:send(ClientSocket, list_to_binary(Status)),
 							userLoop(ClientSocket);
 						{false,Reason} ->
-							Status = string:join(["LoginResponse","failure",Reason], "^"),
+							Status = string:join(["LoginResponse","failure"|Reason], "^"),
 							gen_tcp:send(ClientSocket, list_to_binary(Status));
 						{timeout,Reason} -> 
-							Status = string:join(["LoginResponse","failure",Reason], "^"),
+							Status = string:join(["LoginResponse","failure"|Reason], "^"),
 							gen_tcp:send(ClientSocket, list_to_binary(Status))
 					end;
 				_ ->
@@ -84,8 +84,8 @@ parseClientMessage(Msg)->
 				{login,T};
 		   "createsession" ->
 			   	{createSession, T};
-		   "addusertosession" ->
-			   {addUserToSession, T};
+		   "adduserstosession" ->
+			   {addUsersToSession, T};
 		   "chat" ->
 			   {chat, T};
 		   "getallloggedinusers" ->
@@ -106,6 +106,7 @@ userLoop(ClientSocket) ->
 					sessionManager:createSession(ListOfUsers);
 					
 				{addUsersToSession, [SessionID|ListOfUsers]} ->
+					io:format("~n clien sent : addUsersToSession, params: ~w ~w",[SessionID,ListOfUsers]),
 					{IntSessionID, _} = string:to_integer(SessionID),
 					sessionManager:addUsersToSession({IntSessionID, ListOfUsers});
 
@@ -115,7 +116,7 @@ userLoop(ClientSocket) ->
 
 				getAllLoggedInUsers ->
 					LoggedInUsersList = userManager:getAllLoggedInUsers(),
-					Status = string:join(["LoggedInUsers",LoggedInUsersList],"^"),
+					Status = string:join(["LoggedInUsers"|LoggedInUsersList],"^"),
 					gen_tcp:send(ClientSocket, list_to_binary(Status));
 				logout ->
 					done;
