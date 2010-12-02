@@ -31,11 +31,12 @@ initRegisteredUserList()->
 registerUser(Username, Password, FirstName, LastName, Location, EmailId)
   -> loginManager ! {self(), register, {Username, Password, FirstName, LastName, Location, EmailId}},
 	receive
-		success ->io:format("User is registered successfully!");
-
-		{error, Msg} ->Msg
+		success ->
+			{success,"User logged in successfully"};
+		{error, Reason} ->
+			{failure, Reason}
 	after 5000 -> 
-		io:format("Operation timed out, Try again later!")
+		{timeout,"Operation timed out, Try again later!"}
 	end.
 
 loginUser(UserPid, Username, Password)->
@@ -66,6 +67,14 @@ getUserInfo(Username) ->
 		io:format("Operation Timed Out, try again later")
 	end.
 
+getAll() -> %%returns entire dict for testing purpose
+	loginManager ! {self(), getAll},
+	receive
+		Value -> Value
+	after 5000 ->
+		io:format("Operation Timed Out, try again later")
+	end.
+
 %%
 %% Local Functions
 %%
@@ -84,7 +93,7 @@ loginManagerDB(LoggedInUserList, Conn)->
 			case Result of
 				{updated, _ } ->
 					From ! success;
-			 	{error, _ } ->
+			 	{error, Reason } ->
 					From ! Result
 			end,
 			loginManagerDB(LoggedInUserList, Conn);
@@ -122,6 +131,10 @@ loginManagerDB(LoggedInUserList, Conn)->
 
 		{From, info, Username} ->
 			From ! dict:find(Username, LoggedInUserList),
+			loginManagerDB(LoggedInUserList, Conn);
+		
+		{From, getAll} ->
+			From ! LoggedInUserList,
 			loginManagerDB(LoggedInUserList, Conn);
 			
 		_ ->
