@@ -59,7 +59,7 @@ getAllLoggedInUsers() ->
 	end.
 
 getUserInfo(Username) ->
-	loginManager ! {self(), Username},
+	loginManager ! {self(), info, Username},
 	receive
 		Status -> Status
 	after 2000 ->
@@ -116,10 +116,12 @@ loginManagerDB(LoggedInUserList, Conn)->
 			end;
 			
 		{From, getAllLoggedInUsers} ->
-			From ! dict:fetch_keys(LoggedInUserList);
+			From ! dict:fetch_keys(LoggedInUserList),
+			loginManagerDB(LoggedInUserList, Conn);
 
-		{From, Username} ->
-			From ! dict:find(Username, LoggedInUserList);
+		{From, info, Username} ->
+			From ! dict:find(Username, LoggedInUserList),
+			loginManagerDB(LoggedInUserList, Conn);
 			
 		_ ->
 			loginManagerDB(LoggedInUserList, Conn)
