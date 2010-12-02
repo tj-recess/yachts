@@ -93,7 +93,8 @@ loginManagerDB(LoggedInUserList, Conn)->
 		{From, login, Username, Password, UserPid}->
 			case dict:find(Username, LoggedInUserList) of
 				{ok, _} -> %% found in dictionary, user already logged in
-					From ! already;
+					From ! already,
+					loginManagerDB(LoggedInUserList, Conn);
 			
 				error -> %% not already logged in, fetch from DB 
 					Result = odbc:param_query(Conn, "CALL GetUserInfo(?,?)", 
