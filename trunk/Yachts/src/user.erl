@@ -25,29 +25,34 @@ handleClient(ClientSocket) ->
     case gen_tcp:recv(ClientSocket, 0) of
         {ok, Data} ->
 			D = binary_to_list(Data),
-			io:format("user sent ~w", [D]),
+			io:format("user sent ~w", [Data]),
 			%gen_tcp:send(ClientSocket, "data from handle client"),
 			%%Parse the data first and take appropriate action
             case parseClientMessage(D) of
 				{register,[Username, Password, FirstName, LastName, Location, EmailId]} ->
 					io:format("User sent : register"),
-					Status = userManager:registerUser(Username, Password, FirstName, LastName, Location, EmailId);
+					Status = userManager:registerUser(Username, Password, FirstName, LastName, Location, EmailId),
+					gen_tcp:send(ClientSocket, list_to_binary(Status));
 				{login, [Username, Password]} ->
 					io:format("User sent : login"),
 					Result = userManager:loginUser(self(), Username, Password),
 					case Result of
 						{true, Reason} -> 
 							Status = string:join(["LoginResponse","success",Reason], "^"),
+							gen_tcp:send(ClientSocket, list_to_binary(Status)),
 							userLoop(ClientSocket);
 						{false,Reason} ->
-							Status = string:join(["LoginResponse","failure",Reason], "^");
+							Status = string:join(["LoginResponse","failure",Reason], "^"),
+							gen_tcp:send(ClientSocket, list_to_binary(Status));
 						{timeout,Reason} -> 
-							Status = string:join(["LoginResponse","failure",Reason], "^")
+							Status = string:join(["LoginResponse","failure",Reason], "^"),
+							gen_tcp:send(ClientSocket, list_to_binary(Status))
 					end;
 				_ ->
-					Status = ["BadQuery^User need to login first"]
-			end,
-			gen_tcp:send(ClientSocket, list_to_binary(Status));
+					Status = "BadQuery^User need to login first",
+					gen_tcp:send(ClientSocket, list_to_binary(Status))
+			end;
+			
         {error, closed} ->
             ok
     end.
@@ -84,7 +89,7 @@ userLoop(ClientSocket) ->
 	case gen_tcp:recv(ClientSocket, 0, 100) of
     {ok, Data} ->
 		%%Parse the data first and take appropriate action
-            case parseClientMessage(Data) of
+            case parseClientMessage(binary_to_list(Data)) of
 				{createSession, ListOfUsers} ->
 					sessionManager:createSession(ListOfUsers);
 					
@@ -97,15 +102,21 @@ userLoop(ClientSocket) ->
 					sessionManager:chat({Sender, IntSessionID, string:join(Text,"^")});
 
 				getAllLoggedInUsers ->
-					LoggedInUsersList = users:getAllLoggedInUsers(),
+					LoggedInUsersList = userManager:getAllLoggedInUsers(),
 					Status = string:join(["LoggedInUsers",LoggedInUsersList],"^"),
-					gen_tcp:send(ClientSocket, binary_to_list(Status))
+					gen_tcp:send(ClientSocket, list_to_binary(Status));
 				logout ->
-					done
+					done;
+				_ ->
+					ignore_junk_request
 			end;
+
+	{error, timeout} ->
+		Var = "" ; %%Do nothing here as this is intentional timeout for polling
+
 			
-	{error, closed} ->
-    	ok
+	{error, ErrReason} ->
+    	io:format("Error while receving on socket ~w. Reason : ~w ~n",[ClientSocket,ErrReason])
 			
 	end,	
 			
