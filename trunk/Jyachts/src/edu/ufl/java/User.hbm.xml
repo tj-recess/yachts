@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC
+          "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+          "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd" >
+<hibernate-mapping>
+  <class name="edu.ufl.java.User" table="RegisteredUsers">
+  	<id name="UserID" column="UserID" type="int">
+		<generator class="native"></generator>
+	</id>
+ 	<property name="FirstName" column="FirstName" />
+ 	<property name="LastName" column="LastName" />
+ 	<property name="Username" column="Username" />
+ 	<property name="Password" column="Password" />
+ 	<property name="Location" column="Location" />
+ 	<property name="EmailAddress" column="EmailID" />
+   </class>
+</hibernate-mapping>
