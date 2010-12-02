@@ -138,39 +138,39 @@ userLoop(ClientSocket) ->
 		%%otherwise just wait for another 100 ms for other process to send some data	
 		receive
 			{createSessionResponse, success, Response} -> 
-				ResponseMsg = string:join(["CreateSessionResponse","success",Response], "^"),
+				ResponseMsg = string:join(["CreateSessionResponse","success"|Response], "^"),
 				gen_tcp:send(ClientSocket, list_to_binary(ResponseMsg)),
 				userLoop(ClientSocket);
 			{createSessionResponse, failure,Reason} ->
-				ResponseMsg = string:join(["CreateSessionResponse","failure",Reason], "^"),
+				ResponseMsg = string:join(["CreateSessionResponse","failure"|Reason], "^"),
 				gen_tcp:send(ClientSocket, list_to_binary(ResponseMsg)),
 				userLoop(ClientSocket);
 			{createSessionResponse, timeout,Reason} -> 
-				ResponseMsg = string:join(["CreateSessionResponse","timeout",Reason], "^"),
+				ResponseMsg = string:join(["CreateSessionResponse","timeout"|Reason], "^"),
 				gen_tcp:send(ClientSocket, list_to_binary(ResponseMsg)),
 				userLoop(ClientSocket);
-			{addUserToSessionResponse, success, Response} -> 
-				ResponseMsg = string:join(["addUserToSessionResponse","success",Response], "^"),
+			{addUsersToSessionResponse, success, Response} -> 
+				ResponseMsg = string:join(["addUsersToSessionResponse","success"|Response], "^"),
 				gen_tcp:send(ClientSocket, list_to_binary(ResponseMsg)),
 				userLoop(ClientSocket);
-			{addUserToSessionResponse, failure,Reason} ->
-				ResponseMsg = string:join(["addUserToSessionResponse","failure",Reason], "^"),
+			{addUsersToSessionResponse, failure,Reason} ->
+				ResponseMsg = string:join(["addUsersToSessionResponse","failure"|Reason], "^"),
 				gen_tcp:send(ClientSocket, list_to_binary(ResponseMsg)),
 				userLoop(ClientSocket);
-			{addUserToSessionResponse, timeout,Reason} -> 
-				ResponseMsg = string:join(["addUserToSessionResponse","timeout",Reason], "^"),
+			{addUsersToSessionResponse, timeout,Reason} -> 
+				ResponseMsg = string:join(["addUsersToSessionResponse","timeout"|Reason], "^"),
 				gen_tcp:send(ClientSocket, list_to_binary(ResponseMsg)),
 				userLoop(ClientSocket);
 			{chatResponse, success, Response} ->
-				ResponseMsg = string:join(["chatResponse","success",Response],"^"),
+				ResponseMsg = string:join(["chatResponse","success"|Response],"^"),
 				gen_tcp:send(ClientSocket, list_to_binary(ResponseMsg)),
 				userLoop(ClientSocket);
 			{chatResponse, failure, Reason} ->
-				ResponseMsg = string:join(["chatResponse","failure",Reason],"^"),
+				ResponseMsg = string:join(["chatResponse","failure"|Reason],"^"),
 				gen_tcp:send(ClientSocket, list_to_binary(ResponseMsg)),
 				userLoop(ClientSocket);
 			{chatResponse, timeout, Reason} ->
-				ResponseMsg = string:join(["chatResponse","timeout",Reason],"^"),
+				ResponseMsg = string:join(["chatResponse","timeout"|Reason],"^"),
 				gen_tcp:send(ClientSocket, list_to_binary(ResponseMsg)),
 				userLoop(ClientSocket);
 			endProcess ->
