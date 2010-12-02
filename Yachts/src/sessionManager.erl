@@ -84,21 +84,22 @@ sessionList(SessionList,Count)->
 						if 
 							Present -> %% If User1 is part of the session
 								AddedUsers=addToSession(UserList,SessionID,[],UsersInSession),
-								NewSessionList=dict:update(SessionID, fun (Old) -> lists:append(UsersInSession, AddedUsers) end, SessionList),
+								NewSessionList=dict:store(SessionID,[{SessionID,lists:append(UsersInSession, AddedUsers)}], SessionList),
 								sessionList(NewSessionList,Count);
 							Present ==false ->
 								UserPid ! {addUsersToSessionResponse,failure,["User not part of session"]},
 								sessionList(SessionList,Count)
 						end;
 				Weird ->
-					io:format("received weird value : ~w ~n",[Weird])
+					io:format("received weird value : ~w ~n",[Weird]),
+					sessionList(SessionList, Count)
 			
 			end;
 		 {chat,{User,SessionID,Message,UserPid}}->
 			case dict:find(SessionID, SessionList) of
 				error -> %% if SessionID is invalid 
 					UserPid ! {chatResponse,failure,["Invalid Session ID"]};
-				{ok, {Name,UsersInSession} } -> %% if SessionID is valid then Name is the Pid of the Process Group
+				{ok, [{Name,UsersInSession}] } -> %% if SessionID is valid then Name is the Pid of the Process Group
 					Present=lists:member(User, UsersInSession),
 						if 
 							Present -> %% If User is part of the session
