@@ -29,15 +29,17 @@ loopWrite(Sock)->
 		after 20 ->
 			case  gen_tcp:recv(Sock,0, 20) of
 			{ok, Data} ->
-				  io:format("client ~p received data : ~w ~n",[Sock, Data]);
-
+			  io:format("client ~p received data : ~w ~n",[Sock, list_to_atom(binary_to_list(Data))]),
+			  loopWrite(Sock);
  			{error, timeout} ->				
- 				io:format("");
+ 				io:format(""),
+				loopWrite(Sock);
+			{error, ebadf} ->
+				io:format("server down!!! ~n Client will be terminated now...Done.");
 			{error, Reason} ->
-				io:format("client ~p encountered error while receiving, Reason: ~w ~n",[Sock, Reason])				
-			end,
-
-			loopWrite(Sock)	
+				io:format("client ~p encountered error while receiving, Reason: ~w ~n",[Sock, Reason]),
+				loopWrite(Sock)
+			end	
 	end.
 
 loopListen(Sock)->
