@@ -24,8 +24,9 @@ public class YachtsClient {
 	
 	public static void main(String[] arg) throws Throwable {
 		
-		Socket connection = new Socket("localhost", 5255);
-		BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+		Socket connection = new Socket("localhost", 3000);
+		InputStreamReader isr = new InputStreamReader(connection.getInputStream());
+		BufferedReader in = new BufferedReader(isr);
 		BufferedReader console = new BufferedReader(new InputStreamReader(new FileInputStream(arg[0])));
 		
 		PrintWriter out = new PrintWriter(connection.getOutputStream());
@@ -36,7 +37,6 @@ public class YachtsClient {
 		
 		while((clientreq = console.readLine()) != null) {
 			System.out.println("CONSOLEINPUT: "+clientreq);
-			
 			// send chat invite to other online users
 			if((clientreq.contains("CreateSession"))){
 				
@@ -47,10 +47,15 @@ public class YachtsClient {
 				out.println(clientreq+onlineusers);
 			}
 			else{
-					out.println(clientreq);
+					out.print(clientreq);
 			}
 			out.flush();
-			serverresp=in.readLine();
+			/*for erlang*/
+			char[] cbuf = new char[1000]; 
+ 			in.read(cbuf);
+ 			serverresp = new String(cbuf);
+ 
+//			serverresp=in.readLine();
 			System.out.println("YACHTCLIENT: Server says: "+serverresp);
 			
 			// deal with server responses
