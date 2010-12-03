@@ -23,7 +23,7 @@ public class YachtsClient implements Runnable {
 	String[] commands = {"login^userXX^pwd","createsession^userXX^userYY","adduserstosession^SS^userXX^userYY^userZZ","chat^userXX^SS^Hello","chat^userXX^SS^Bye"};
 	//String[] commands = {"register^userXX^pwd^usXX^usrXX^usa^userXX@gmail.com"};
 	static volatile int count=1;
-	static final int numUsers= 2;
+	static final int numUsers= 5;
 	
 	
 	public static void main(String[] arg) throws Throwable {
@@ -54,9 +54,14 @@ public class YachtsClient implements Runnable {
 		Socket connection = new Socket("localhost", 3000);
 		InputStreamReader isr = new InputStreamReader(connection.getInputStream());
 		BufferedReader in = new BufferedReader(isr);
+		boolean fileOut=false;
 		//BufferedReader console = new BufferedReader(new InputStreamReader(new FileInputStream(arg[0])));
 		//BufferedReader console = new BufferedReader(new InputStreamReader(new FileInputStream("/home/dwaipayan/cmd.txt")));
-		BufferedWriter fout = new BufferedWriter(new FileWriter("/home/dwaipayan/chatlogs/user"+userID+".txt"));
+	
+		BufferedWriter	fout = new BufferedWriter(new FileWriter("/home/dwaipayan/chatlogs/user"+userID+".txt"));
+		
+			//fileOut=true;
+		
 		
 		int messageCount=0;
 		PrintWriter out = new PrintWriter(connection.getOutputStream());
@@ -99,20 +104,23 @@ public class YachtsClient implements Runnable {
 			}
 		
 			System.out.println("User"+userID+" : "+clientreq);
+			
 			out.print(clientreq);
 			Thread.sleep(1000);
 			out.flush();
 			/*for erlang*/
 			
-			char[] cbuf = new char[1000]; 
+			/*char[] cbuf = new char[1000]; 
  			in.read(cbuf);
- 			serverresp = new String(cbuf);
+ 			serverresp = new String(cbuf);*/
  			//parse server response into parts
+ 			serverresp=in.readLine();
  			
- 			/*System.out.println("User"+userID+" : Server Response: "+serverresp);
- 			System.out.println("User"+userID+" : SessionList: "+sessions);*/
- 			
- 			fout.write("User"+userID+" : Server Response: "+serverresp);
+ 			System.out.println("User"+userID+" : Server Response: "+serverresp);
+ 			System.out.println("User"+userID+" : SessionList: "+sessions);
+ 			if(fileOut){
+ 				fout.write("User"+userID+" : Server Response: "+serverresp);
+ 			}
  			responseList= parse(serverresp);
  			String responseType=responseList.get(0);
  			//			serverresp=in.readLine();
@@ -151,17 +159,6 @@ public class YachtsClient implements Runnable {
 			
 			
 			
-			/*if(serverresp.contains("LoggedInUsers^")){
-				// got a list of logged in users - add it to local arraylist
-				loggedInUsers = parse(serverresp);
-				loggedInUsers.remove(0); // removes the first entry - the response type identifier
-				System.out.println("YACHTCLIENT: Stored list of users locally: "+loggedInUsers.toString());
-			}
-			else if(serverresp.contains("CreateSessionResponse^")){
-				// store the list of sessions and respective users.
-				System.out.println("YACHTCLIENT: Received session details.. storing locally ");
-				
-			}*/
 			
 		}
 		
