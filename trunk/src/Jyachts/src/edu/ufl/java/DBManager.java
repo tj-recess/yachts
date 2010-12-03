@@ -1,4 +1,4 @@
-package src.edu.ufl.java;
+package Jyachts.src.edu.ufl.java;
 
 import java.io.PrintWriter;
 import java.net.Socket;

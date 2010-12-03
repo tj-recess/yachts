@@ -1,4 +1,4 @@
-package edu.ufl.java;
+package Jyachts.src.edu.ufl.java;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -9,6 +9,10 @@ import java.util.ArrayList;
 import java.util.StringTokenizer;
 
 public class YachtsClient {
+	
+	private static ArrayList<String> loggedInUsers = new ArrayList<String>();
+	private static String userName;
+	
 	
 	public static ArrayList<String> parse(String inputstring){
 		ArrayList<String> params = new ArrayList<String>();
@@ -25,18 +29,18 @@ public class YachtsClient {
 	public static void main(String[] arg) throws Throwable {
 		
 		Socket connection = new Socket("localhost", 5255);
-		BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+		InputStreamReader isr = new InputStreamReader(connection.getInputStream());
+		BufferedReader in = new BufferedReader(isr);
 		BufferedReader console = new BufferedReader(new InputStreamReader(new FileInputStream(arg[0])));
 		
 		PrintWriter out = new PrintWriter(connection.getOutputStream());
 		String clientreq;
 		String serverresp;
 		String onlineusers ="";
-		ArrayList<String> loggedInUsers = new ArrayList<String>();
+		
 		
 		while((clientreq = console.readLine()) != null) {
 			System.out.println("CONSOLEINPUT: "+clientreq);
-			
 			// send chat invite to other online users
 			if((clientreq.contains("CreateSession"))){
 				
@@ -46,8 +50,14 @@ public class YachtsClient {
 				
 				out.println(clientreq+onlineusers);
 			}
+			else if(clientreq.contains("Login")){
+				ArrayList<String> params = new ArrayList<String>();
+				params = parse(clientreq);
+				userName = params.get(1);
+				System.out.println("YACHTCLIENT: This is user: "+userName);
+			}
 			else{
-					out.println(clientreq);
+					out.print(clientreq);
 			}
 			out.flush();
 			serverresp=in.readLine();
@@ -63,11 +73,16 @@ public class YachtsClient {
 			else if(serverresp.contains("CreateSessionResponse^")){
 				// store the list of sessions and respective users.
 				System.out.println("YACHTCLIENT: Received session details.. storing locally ");
-				
 			}
 		}
 		while((serverresp=in.readLine())!="BYE"){
 			System.out.println("YACHTCLIENT: Server Response: "+serverresp);
+			if(serverresp.contains("CreateSessionResponse^")){
+				// send a test message in the newly created chat window
+				System.out.println("YACHTCLIENT: sending a chat message ");
+				out.println("Hello there... this is user: "+userName);
+				
+			}
 		}
 		in.close();
 		out.close();
