@@ -11,7 +11,7 @@
 %%
 %% Exported Functions
 %%
--export([handleClient/1,dummy/1]).
+-export([handleClient/1,dummy/1,userLoop/1]).
 
 %%
 %% API Functions
@@ -26,58 +26,72 @@ handleClient(ClientSocket) ->
         {ok, Data} ->
 			D = binary_to_list(Data),
 			io:format("user sent ~w", [list_to_atom(D)]),
-			%gen_tcp:send(ClientSocket, "data from handle client"),
+			
 			%%Parse the data first and take appropriate action
-            case parseClientMessage(D) of
-				{register,[Username, Password, FirstName, LastName, Location, EmailId]} ->
-					io:format("User sent : register"),
-					Result = userManager:registerUser(Username, Password, FirstName, LastName, Location, EmailId),
-					case Result of
-						{success, Reason} -> 
-							Status = string:join(["RegisterResponse","success"|Reason], "^"),
-							gen_tcp:send(ClientSocket, list_to_binary(Status)),
-							userLoop(ClientSocket);
-						{failure,Reason} ->
-							Status = string:join(["RegisterResponse","failure"|Reason], "^"),
-							gen_tcp:send(ClientSocket, list_to_binary(Status));
-						{timeout,Reason} -> 
-							Status = string:join(["RegisterResponse","failure"|Reason], "^"),
-							gen_tcp:send(ClientSocket, list_to_binary(Status))
-					end,
-					gen_tcp:send(ClientSocket, list_to_binary(Status));
-				{login, [Username, Password]} ->
-					io:format("User sent : login"),
-					Result = userManager:loginUser(self(), Username, Password),
-					case Result of
-						{true, Reason} -> 
-							Status = string:join(["LoginResponse","success"|Reason], "^"),
-							gen_tcp:send(ClientSocket, list_to_binary(Status)),
-							userLoop(ClientSocket);
-						{false,Reason} ->
-							Status = string:join(["LoginResponse","failure"|Reason], "^"),
-							gen_tcp:send(ClientSocket, list_to_binary(Status));
-						{timeout,Reason} -> 
-							Status = string:join(["LoginResponse","failure"|Reason], "^"),
-							gen_tcp:send(ClientSocket, list_to_binary(Status))
-					end;
-				_ ->
-					Status = "BadQuery^User need to login first",
-					gen_tcp:send(ClientSocket, list_to_binary(Status))
-			end;
+			%check if more than one cmds were received together			
+			executeCommands(parseClientMessage(string:tokens(D, "~"),[]),ClientSocket);
 			
         {error, closed} ->
             ok
     end.
 
 
+executeCommands([],ClientSocket) ->
+	done;
+executeCommands([H|T], ClientSocket) ->
+	case H of
+		{register,[Username, Password, FirstName, LastName, Location, EmailId]} ->
+			io:format("User sent : register"),
+			Result = userManager:registerUser(Username, Password, FirstName, LastName, Location, EmailId),
+			case Result of
+				{success, Reason} -> 
+					Status = string:join(["RegisterResponse","success"|Reason], "^"),
+					gen_tcp:send(ClientSocket, list_to_binary(Status));
+				{failure,Reason} ->
+					Status = string:join(["RegisterResponse","failure"|Reason], "^"),
+					gen_tcp:send(ClientSocket, list_to_binary(Status));
+				{timeout,Reason} -> 
+					Status = string:join(["RegisterResponse","failure"|Reason], "^"),
+					gen_tcp:send(ClientSocket, list_to_binary(Status))
+			end;
+		{login, [Username, Password]} ->
+			io:format("User sent : login"),
+			Pid = spawn(?MODULE, userLoop, [ClientSocket]),
+			Result = userManager:loginUser(Pid, Username, Password),
+			case Result of
+				{true, Reason} -> 
+					Status = string:join(["LoginResponse","success"|Reason], "^"),
+					gen_tcp:send(ClientSocket, list_to_binary(Status));							
+				{false,Reason} ->
+					Status = string:join(["LoginResponse","failure"|Reason], "^"),
+					gen_tcp:send(ClientSocket, list_to_binary(Status)),
+					exit(Pid, kill);
+				{timeout,Reason} -> 
+					Status = string:join(["LoginResponse","failure"|Reason], "^"),
+					gen_tcp:send(ClientSocket, list_to_binary(Status)),
+					exit(Pid, kill)
+			end;
+		
+		_ ->
+			Status = "BadQuery^User need to login first",
+			gen_tcp:send(ClientSocket, list_to_binary(Status))
+	end,
+	executeCommands(T, ClientSocket).
+
 
 %%
 %% Local Functions
 %%
 
-parseClientMessage(Msg)->
-       [H|T]= string:tokens(Msg,"^"),
-       case string:to_lower(H) of
+parseClientMessage([],FormattedList) ->
+	FormattedList;
+parseClientMessage([First|Rest],FormattedList)->
+    NewFormattedList = [parseSingleCmd(First)|FormattedList],
+	parseClientMessage(Rest, NewFormattedList).
+
+parseSingleCmd(Cmd) ->
+	[H|T] = string:tokens(Cmd, "^"),
+	case string:to_lower(H) of
        		"register" ->
 				{register,T};
             "login" -> 
@@ -93,17 +107,17 @@ parseClientMessage(Msg)->
 		   "removeuserfromsession" ->
 			   {removeUserFromSession, T};
 		   "logout" ->
-			   logout;
+			   {logout,T};
 		   _ ->
-			   badinput
-       end.
+			   {badinput,T}
+    end.
 
 userLoop(ClientSocket) ->
 	%%wait for 100 ms for user to send a command first,
 	case gen_tcp:recv(ClientSocket, 0, 100) of
     {ok, Data} ->
 		%%Parse the data first and take appropriate action
-            case parseClientMessage(binary_to_list(Data)) of
+            case parseSingleCmd(binary_to_list(Data)) of
 				{createSession, ListOfUsers} ->
 					sessionManager:createSession(ListOfUsers);
 					
