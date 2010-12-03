@@ -90,6 +90,8 @@ parseClientMessage(Msg)->
 			   {chat, T};
 		   "getallloggedinusers" ->
 			   getAllLoggedInUsers;
+		   "removeuserfromsession" ->
+			   {removeUserFromSession, T};
 		   "logout" ->
 			   logout;
 		   _ ->
@@ -110,6 +112,11 @@ userLoop(ClientSocket) ->
 					{IntSessionID, _} = string:to_integer(SessionID),
 					sessionManager:addUsersToSession({IntSessionID, ListOfUsers});
 
+				{removeUserFromSession, [SessionID|Username]} ->
+					io:format("~n clien sent : removeUserFromSession, params: ~w ~w",[SessionID,Username]),
+					{IntSessionID, _} = string:to_integer(SessionID),
+					sessionManager:removeUserFromSession({IntSessionID, Username});
+				
 				{chat, [Sender|[SessionID|Text]]}->
 					{IntSessionID, _} = string:to_integer(SessionID),
 					sessionManager:chat({Sender, IntSessionID, string:join(Text,"^")});
@@ -162,6 +169,20 @@ userLoop(ClientSocket) ->
 				ResponseMsg = string:join(["addUsersToSessionResponse","timeout"|Reason], "^"),
 				gen_tcp:send(ClientSocket, list_to_binary(ResponseMsg)),
 				userLoop(ClientSocket);
+			
+			{removeUserFromSessionResponse, success, Response} -> 
+				ResponseMsg = string:join(["removeUserFromSessionResponse","success"|Response], "^"),
+				gen_tcp:send(ClientSocket, list_to_binary(ResponseMsg)),
+				userLoop(ClientSocket);
+			{removeUserFromSessionResponse, failure,Reason} ->
+				ResponseMsg = string:join(["removeUserFromSessionResponse","failure"|Reason], "^"),
+				gen_tcp:send(ClientSocket, list_to_binary(ResponseMsg)),
+				userLoop(ClientSocket);
+			{removeUserFromSessionResponse, timeout,Reason} -> 
+				ResponseMsg = string:join(["removeUserFromSessionResponse","timeout"|Reason], "^"),
+				gen_tcp:send(ClientSocket, list_to_binary(ResponseMsg)),
+				userLoop(ClientSocket);
+			
 			{chatResponse, success, Response} ->
 				ResponseMsg = string:join(["chatResponse","success"|Response],"^"),
 				gen_tcp:send(ClientSocket, list_to_binary(ResponseMsg)),
