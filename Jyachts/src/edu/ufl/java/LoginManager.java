@@ -1,4 +1,4 @@
-package edu.ufl.java;
+package src.edu.ufl.java;
 
 import java.net.Socket;
 import java.util.HashMap;

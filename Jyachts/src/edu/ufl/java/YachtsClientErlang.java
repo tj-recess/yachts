@@ -8,7 +8,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 
-public class YachtsClient {
+public class YachtsClientErlang {
 	
 	private static ArrayList<String> loggedInUsers = new ArrayList<String>();
 	private static String userName;
@@ -28,7 +28,7 @@ public class YachtsClient {
 	
 	public static void main(String[] arg) throws Throwable {
 		
-		Socket connection = new Socket("localhost", 5255);
+		Socket connection = new Socket("localhost", 3000);
 		InputStreamReader isr = new InputStreamReader(connection.getInputStream());
 		BufferedReader in = new BufferedReader(isr);
 		BufferedReader console = new BufferedReader(new InputStreamReader(new FileInputStream(arg[0])));
@@ -60,7 +60,12 @@ public class YachtsClient {
 					out.print(clientreq);
 			}
 			out.flush();
-			serverresp=in.readLine();
+			/*for erlang*/
+			char[] cbuf = new char[1000]; 
+ 			in.read(cbuf);
+ 			serverresp = new String(cbuf);
+			
+		//	serverresp=in.readLine(); commented for Erlang client
 			System.out.println("YACHTCLIENT: Server says: "+serverresp);
 			
 			// deal with server responses
@@ -81,7 +86,6 @@ public class YachtsClient {
 				// send a test message in the newly created chat window
 				System.out.println("YACHTCLIENT: sending a chat message ");
 				out.println("Hello there... this is user: "+userName);
-				
 			}
 		}
 		in.close();

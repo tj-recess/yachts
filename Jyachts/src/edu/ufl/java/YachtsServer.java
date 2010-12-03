@@ -1,4 +1,4 @@
-package edu.ufl.java;
+package src.edu.ufl.java;
 
 import java.io.*;
 import java.net.*;
@@ -118,7 +118,7 @@ public class YachtsServer {
 					}
 					else{
 						// unknown command
-						System.out.println("YACHTSERVER: ERROR: Unknown command from Client");
+						System.out.println("YACHTSERVER: ERROR: Unknown command from Client: "+inputstring);
 					}
 				}
 			}
