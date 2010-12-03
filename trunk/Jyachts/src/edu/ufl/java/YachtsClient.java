@@ -2,6 +2,7 @@ package edu.ufl.java;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -19,8 +20,8 @@ import java.util.TreeSet;
 public class YachtsClient implements Runnable {
 	
 	
-	int[] a= new int[10];
-	String[] commands = {"login^userXX^pwd","createsession^userXX^userYY","adduserstosession^SS^userXX^userYY^userZZ","chat^userXX^SS^Hello","chat^userXX^SS^Bye"};
+	static final String location = "/home/dwaipayan/chatlogs";
+	static final String[] commands = {"login^userXX^pwd","createsession^userXX^userYY","adduserstosession^SS^userXX^userYY^userZZ","chat^userXX^SS^Hello","chat^userXX^SS^Bye"};
 	//String[] commands = {"register^userXX^pwd^usXX^usrXX^usa^userXX@gmail.com"};
 	static volatile int count=1;
 	static final int numUsers= 5;
@@ -55,18 +56,20 @@ public class YachtsClient implements Runnable {
 		InputStreamReader isr = new InputStreamReader(connection.getInputStream());
 		BufferedReader in = new BufferedReader(isr);
 		boolean fileOut=false;
+		String clientreq;
 		//BufferedReader console = new BufferedReader(new InputStreamReader(new FileInputStream(arg[0])));
-		//BufferedReader console = new BufferedReader(new InputStreamReader(new FileInputStream("/home/dwaipayan/cmd.txt")));
-	
-		BufferedWriter	fout = new BufferedWriter(new FileWriter("/home/dwaipayan/chatlogs/user"+userID+".txt"));
+		
+		
+		
+		BufferedWriter	fout = new BufferedWriter(new FileWriter(location+"/user"+userID+".txt"));
 		
 			//fileOut=true;
 		
 		
 		int messageCount=0;
 		PrintWriter out = new PrintWriter(connection.getOutputStream());
-		String clientreq;
-		String serverresp;
+		
+		
 		String onlineusers ="";
 		ArrayList<String> loggedInUsers = new ArrayList<String>();
 		TreeSet<String> sessions = new TreeSet<String>();
@@ -110,52 +113,55 @@ public class YachtsClient implements Runnable {
 			out.flush();
 			/*for erlang*/
 			
-			/*char[] cbuf = new char[1000]; 
+			char[] cbuf = new char[1000]; 
  			in.read(cbuf);
- 			serverresp = new String(cbuf);*/
+ 			String response = new String(cbuf);
  			//parse server response into parts
- 			serverresp=in.readLine();
- 			
- 			System.out.println("User"+userID+" : Server Response: "+serverresp);
- 			System.out.println("User"+userID+" : SessionList: "+sessions);
- 			if(fileOut){
- 				fout.write("User"+userID+" : Server Response: "+serverresp);
- 			}
- 			responseList= parse(serverresp);
- 			String responseType=responseList.get(0);
- 			//			serverresp=in.readLine();
-			
-			// deal with server responses
-			
-			if("loginResponse".equalsIgnoreCase(responseType)){
+ 			//System.out.println("User"+userID+" : Server Response: "+response);
+ 			ArrayList<String> serverResponseList = parseMessage(response);
+			System.out.println(serverResponseList);
+			for(String serverresp:serverResponseList){
+				if(serverresp.length()<=0)
+					continue;
 				
-			}
-			else if("addUsersToSessionResponse".equalsIgnoreCase(responseType)){
-				if("success".equalsIgnoreCase(responseList.get(1))){
-					sessions.add(responseList.get(2));
-				}
-				else{
+ 			
+		 			System.out.println("User"+userID+" : Server Message: "+serverresp);
+		 			System.out.println("User"+userID+" : SessionList: "+sessions);
+		 			if(fileOut){
+		 				fout.write("User"+userID+" : Server Message: "+serverresp);
+		 			}
+		 			responseList= parse(serverresp);
+		 			String responseType=responseList.get(0);
+		 			
+					if("loginResponse".equalsIgnoreCase(responseType)){
+						
+					}
+					else if("addUsersToSessionResponse".equalsIgnoreCase(responseType)){
+						if("success".equalsIgnoreCase(responseList.get(1))){
+							sessions.add(responseList.get(2));
+						}
+						else{
+							
+						}
+					}
+					else if("chatResponse".equalsIgnoreCase(responseType)){
+						if("success".equalsIgnoreCase(responseList.get(1))){
+							
+						}
+						else{
+							
+						}
+					}
+					else if("removeUserFromSessionResponse".equalsIgnoreCase(responseType)){
+						if("success".equalsIgnoreCase(responseList.get(1))){
+							sessions.remove(responseList.get(2));
+						}
+						else{
+							
+						}
+					}
 					
-				}
 			}
-			else if("chatResponse".equalsIgnoreCase(responseType)){
-				if("success".equalsIgnoreCase(responseList.get(1))){
-					
-				}
-				else{
-					
-				}
-			}
-			else if("removeUserFromSessionResponse".equalsIgnoreCase(responseType)){
-				if("success".equalsIgnoreCase(responseList.get(1))){
-					sessions.remove(responseList.get(2));
-				}
-				else{
-					
-				}
-			}
-			
-			
 			
 			
 			
@@ -169,6 +175,18 @@ public class YachtsClient implements Runnable {
 	
 	}
 
+	public static ArrayList<String> parseMessage(String inputstring){
+		ArrayList<String> params = new ArrayList<String>();
+				
+		// get the parameters
+		StringTokenizer st = new StringTokenizer(inputstring,"~");
+		while(st.hasMoreTokens()){
+			params.add(st.nextToken());
+		}
+		
+		return params;
+	}
+	
 	public static ArrayList<String> parse(String inputstring){
 		ArrayList<String> params = new ArrayList<String>();
 				
