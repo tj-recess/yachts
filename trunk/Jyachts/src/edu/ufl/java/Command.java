@@ -1,4 +1,4 @@
-package edu.ufl.java;
+package src.edu.ufl.java;
 
 import java.io.PrintWriter;
 import java.net.Socket;

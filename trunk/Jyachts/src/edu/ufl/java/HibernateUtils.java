@@ -1,4 +1,4 @@
-package edu.ufl.java;
+package src.edu.ufl.java;
 
 import org.hibernate.SessionFactory;
 import org.hibernate.Session;
