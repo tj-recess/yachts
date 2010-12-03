@@ -116,9 +116,16 @@ public class YachtsServer {
 						System.out.println("YACHTSERVER: User list: "+userlist);
 						return userlist;
 					}
+					else if(token.equalsIgnoreCase("Chat")){
+						// find out session in which the message was posted
+						
+						// post message to all session participants
+						return "Received chat message: "+inputstring;
+					}
 					else{
 						// unknown command
 						System.out.println("YACHTSERVER: ERROR: Unknown command from Client: "+inputstring);
+						return "Error: Unknown command received: "+inputstring;
 					}
 				}
 			}
