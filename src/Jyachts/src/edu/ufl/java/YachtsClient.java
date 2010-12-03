@@ -13,7 +13,6 @@ public class YachtsClient {
 	private static ArrayList<String> loggedInUsers = new ArrayList<String>();
 	private static String userName;
 	
-	
 	public static ArrayList<String> parse(String inputstring){
 		ArrayList<String> params = new ArrayList<String>();
 				
@@ -28,6 +27,8 @@ public class YachtsClient {
 	
 	public static void main(String[] arg) throws Throwable {
 		
+		ArrayList<ClientSessions> sessionList = new ArrayList<ClientSessions>();
+		
 		Socket connection = new Socket("localhost", 5255);
 		InputStreamReader isr = new InputStreamReader(connection.getInputStream());
 		BufferedReader in = new BufferedReader(isr);
@@ -39,49 +40,81 @@ public class YachtsClient {
 		String onlineusers ="";
 		
 		
-		while((clientreq = console.readLine()) != null) {
+		while (((clientreq = console.readLine()) != null)) {
 			System.out.println("CONSOLEINPUT: "+clientreq);
-			// send chat invite to other online users
-			if((clientreq.contains("CreateSession"))){
+			if(clientreq!=null){
+				// send chat invite to other online users
+				if((clientreq.contains("CreateSession"))){
 				
 				// get list of logged in users.
 				for(int i=0; i<loggedInUsers.size();i++)
 					onlineusers += "^"+loggedInUsers.get(i);
 				
 				out.println(clientreq+onlineusers);
+				}
+				else if(clientreq.contains("Login")){
+					ArrayList<String> params = new ArrayList<String>();
+					params = parse(clientreq);
+					userName = params.get(1);
+					System.out.println("YACHTCLIENT: This is user: "+userName);
+					out.println(clientreq);
+				}
+				else{
+						out.println(clientreq);
+				}
+				out.flush();
 			}
-			else if(clientreq.contains("Login")){
-				ArrayList<String> params = new ArrayList<String>();
-				params = parse(clientreq);
-				userName = params.get(1);
-				System.out.println("YACHTCLIENT: This is user: "+userName);
-			}
-			else{
-					out.print(clientreq);
-			}
-			out.flush();
 			serverresp=in.readLine();
-			System.out.println("YACHTCLIENT: Server says: "+serverresp);
-			
-			// deal with server responses
-			if(serverresp.contains("LoggedInUsers^")){
-				// got a list of logged in users - add it to local arraylist
-				loggedInUsers = parse(serverresp);
-				loggedInUsers.remove(0); // removes the first entry - the response type identifier
-				System.out.println("YACHTCLIENT: Stored list of users locally: "+loggedInUsers.toString());
-			}
-			else if(serverresp.contains("CreateSessionResponse^")){
-				// store the list of sessions and respective users.
-				System.out.println("YACHTCLIENT: Received session details.. storing locally ");
+			if(serverresp!=null){
+					
+					System.out.println("YACHTCLIENT: Server says: "+serverresp);
+				
+					// deal with server responses
+					if(serverresp.contains("LoggedInUsers^")){
+						// got a list of logged in users - add it to local arraylist
+						loggedInUsers = parse(serverresp);
+						loggedInUsers.remove(0); // removes the first entry - the response type identifier
+						System.out.println("YACHTCLIENT: Stored list of users locally: "+loggedInUsers.toString());
+					}
+					else if(serverresp.contains("CreateSessionResponse^")){
+						// store the list of sessions and respective users.
+						System.out.println("YACHTCLIENT: Received session details.. storing locally ");
+						ArrayList<String> params = new ArrayList<String> ();
+						params = parse(serverresp);
+						String sessionID = params.get(2);
+						ArrayList<String> users = new ArrayList<String> (); 
+						for(int i=3;i<params.size();i++){
+							users.add(params.get(i));
+							System.out.println("User in session: "+sessionID+" - "+params.get(i));
+						}
+						System.out.println("Users size: "+users.size());
+						ClientSessions cs = new ClientSessions(sessionID,users);
+						System.out.println("YACHTCLIENT: sending a chat message ");
+						out.println("Chat^"+userName+"^"+1+"^Hello there... this is user: "+userName);
+						out.flush();
+						serverresp=in.readLine();
+						System.out.println("YACHTCLIENT: Server Response: "+serverresp);
+					}
 			}
 		}
 		while((serverresp=in.readLine())!="BYE"){
 			System.out.println("YACHTCLIENT: Server Response: "+serverresp);
 			if(serverresp.contains("CreateSessionResponse^")){
-				// send a test message in the newly created chat window
+				// store the list of sessions and respective users.
+				System.out.println("YACHTCLIENT: Received session details.. storing locally ");
+				ArrayList<String> params = new ArrayList<String> ();
+				params = parse(serverresp);
+				String sessionID = params.get(2);
+				ArrayList<String> users = new ArrayList<String> (); 
+				for(int i=3;i<params.size();i++){
+					users.add(params.get(i));
+					System.out.println("User in session: "+sessionID+" - "+params.get(i));
+				}
+				System.out.println("Users size: "+users.size());
+				ClientSessions cs = new ClientSessions(sessionID,users);
 				System.out.println("YACHTCLIENT: sending a chat message ");
-				out.println("Hello there... this is user: "+userName);
-				
+				out.println("Chat^"+userName+"^"+1+"^Hello there... this is user: "+userName);
+				out.flush();
 			}
 		}
 		in.close();

@@ -20,6 +20,6 @@
     <property name="current_session_context_class">thread</property>
  
     <!-- Mapping files will go here.... -->
-    <mapping resource="edu/ufl/java/User.hbm.xml" />
+    <mapping resource="Jyachts/src/edu/ufl/java/User.hbm.xml" />
   </session-factory>
 </hibernate-configuration> 
