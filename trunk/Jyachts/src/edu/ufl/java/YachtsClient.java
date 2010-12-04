@@ -109,7 +109,7 @@ public class YachtsClient implements Runnable {
 			System.out.println("User"+userID+" : "+clientreq);
 			
 			out.print(clientreq);
-			Thread.sleep(1000);
+			//Thread.sleep(1000);
 			out.flush();
 			/*for erlang*/
 			
