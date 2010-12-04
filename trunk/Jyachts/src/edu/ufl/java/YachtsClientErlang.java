@@ -20,7 +20,7 @@ import java.util.TreeSet;
 public class YachtsClientErlang implements Runnable {
 	
 	
-	static final String LOCATION = "/home/dwaipayan/chatlogs";
+	static final String LOCATION = System.getProperty("user.home")+"/chatlogs";
 	static final String[] COMMANDS = {"login^userXX^pwd","createsession^userXX^userYY","adduserstosession^SS^userXX^userYY^userZZ","chat^userXX^SS^Hello","chat^userXX^SS^Bye"};
 	//String[] commands = {"register^userXX^pwd^usXX^usrXX^usa^userXX@gmail.com"};
 	static volatile int COUNT=1;
@@ -61,42 +61,46 @@ public class YachtsClientErlang implements Runnable {
 		TreeSet<String> sessions = new TreeSet<String>();
 		ArrayList<String>  responseList = new ArrayList<String>();
 		ArrayList<String>  requestList = new ArrayList<String>();
-		while(messageCount<COMMANDS.length){
-			clientreq=COMMANDS[messageCount++];
-			requestList = parse(clientreq);
-			String requestType= requestList.get(0);
+		while(true){
 			
-			if("login".equalsIgnoreCase(requestType)){
-				clientreq=clientreq.replace("XX",userID );
+			if(messageCount<COMMANDS.length){
+				clientreq=COMMANDS[messageCount++];
+				requestList = parse(clientreq);
+				String requestType= requestList.get(0);
 				
-			}
-			else if("register".equalsIgnoreCase(requestType)){
-				clientreq=clientreq.replace("XX", userID);
-			}
-			else if ("createsession".equalsIgnoreCase(requestType)){
-				clientreq=clientreq.replace("XX", userID);
-				clientreq=clientreq.replace("YY", Integer.toString(new Random().nextInt(NUM_USERS-1)+1));
-			}
-			else if("adduserstosession".equalsIgnoreCase(requestType)){
-				clientreq=clientreq.replace("XX", userID);
-				clientreq=clientreq.replace("YY", Integer.toString(new Random().nextInt(NUM_USERS-1)+1));
-				clientreq=clientreq.replace("ZZ", Integer.toString(new Random().nextInt(NUM_USERS-1)+1));
-				clientreq=clientreq.replace("SS", sessions.first());
-			}
-			else if("chat".equalsIgnoreCase(requestType)){
-				clientreq=clientreq.replace("XX", userID);
-				clientreq=clientreq.replace("SS", sessions.first());
-				
-			}
-		
-			System.out.println("User"+userID+" : "+clientreq);
+				if("login".equalsIgnoreCase(requestType)){
+					clientreq=clientreq.replace("XX",userID );
+					
+				}
+				else if("register".equalsIgnoreCase(requestType)){
+					clientreq=clientreq.replace("XX", userID);
+				}
+				else if ("createsession".equalsIgnoreCase(requestType)){
+					clientreq=clientreq.replace("XX", userID);
+					clientreq=clientreq.replace("YY", Integer.toString(new Random().nextInt(NUM_USERS-1)+1));
+				}
+				else if("adduserstosession".equalsIgnoreCase(requestType)){
+					clientreq=clientreq.replace("XX", userID);
+					clientreq=clientreq.replace("YY", Integer.toString(new Random().nextInt(NUM_USERS-1)+1));
+					clientreq=clientreq.replace("ZZ", Integer.toString(new Random().nextInt(NUM_USERS-1)+1));
+					clientreq=clientreq.replace("SS", sessions.first());
+				}
+				else if("chat".equalsIgnoreCase(requestType)){
+					clientreq=clientreq.replace("XX", userID);
+					clientreq=clientreq.replace("SS", sessions.first());
+					
+				}
 			
-			out.print(clientreq);
-			Thread.sleep(1000);
-			out.flush();
+				System.out.println("User"+userID+" : "+clientreq);
+				
+				out.print(clientreq);
+				//Thread.sleep(1000);
+				out.flush();
+			}
 			/*for erlang*/
 			
-			char[] cbuf = new char[1000]; 
+			
+			char[] cbuf = new char[1000];			
  			in.read(cbuf);
  			String response = new String(cbuf);
  			//parse server response into parts
@@ -174,13 +178,14 @@ public class YachtsClientErlang implements Runnable {
 					}
 					
 			}
-			
+			fout.flush();
 			
 			
 			
 		}
 		
-		fout.close();
+		//fout.close();
+		//in.readLine();
 		//in.close();
 		//out.close();
 		//console.close();
