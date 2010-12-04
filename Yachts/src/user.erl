@@ -126,7 +126,7 @@ userLoop(ClientSocket) ->
 					{IntSessionID, _} = string:to_integer(SessionID),
 					sessionManager:addUsersToSession({IntSessionID, ListOfUsers});
 
-				{removeUserFromSession, [SessionID|Username]} ->
+				{removeUserFromSession, [SessionID,Username]} ->
 					io:format("~n clien sent : removeUserFromSession, params: ~w ~w",[SessionID,Username]),
 					{IntSessionID, _} = string:to_integer(SessionID),
 					sessionManager:removeUserFromSession({IntSessionID, Username});
@@ -137,7 +137,8 @@ userLoop(ClientSocket) ->
 
 				getAllLoggedInUsers ->
 					LoggedInUsersList = userManager:getAllLoggedInUsers(),
-					Status = string:join(["LoggedInUsers"|LoggedInUsersList],"^"),
+					Status = string:concat(string:join(["LoggedInUsers"|LoggedInUsersList],"^"),"\n"),
+					
 					gen_tcp:send(ClientSocket, list_to_binary(Status));
 				logout ->
 					done;
@@ -161,56 +162,61 @@ userLoop(ClientSocket) ->
 		receive
 			{createSessionResponse, success, Response} -> 
 				ResponseMsg = string:join(["CreateSessionResponse","success"|Response], "^"),
-				gen_tcp:send(ClientSocket, list_to_binary(ResponseMsg)),
+				sendClient(ClientSocket,ResponseMsg),
 				userLoop(ClientSocket);
 			{createSessionResponse, failure,Reason} ->
 				ResponseMsg = string:join(["CreateSessionResponse","failure"|Reason], "^"),
-				gen_tcp:send(ClientSocket, list_to_binary(ResponseMsg)),
+				sendClient(ClientSocket,ResponseMsg),
 				userLoop(ClientSocket);
 			{createSessionResponse, timeout,Reason} -> 
 				ResponseMsg = string:join(["CreateSessionResponse","timeout"|Reason], "^"),
-				gen_tcp:send(ClientSocket, list_to_binary(ResponseMsg)),
+				sendClient(ClientSocket,ResponseMsg),
 				userLoop(ClientSocket);
 			{addUsersToSessionResponse, success, Response} -> 
 				ResponseMsg = string:join(["addUsersToSessionResponse","success"|Response], "^"),
-				gen_tcp:send(ClientSocket, list_to_binary(ResponseMsg)),
+				sendClient(ClientSocket,ResponseMsg),
 				userLoop(ClientSocket);
 			{addUsersToSessionResponse, failure,Reason} ->
 				ResponseMsg = string:join(["addUsersToSessionResponse","failure"|Reason], "^"),
-				gen_tcp:send(ClientSocket, list_to_binary(ResponseMsg)),
+				sendClient(ClientSocket,ResponseMsg),
 				userLoop(ClientSocket);
 			{addUsersToSessionResponse, timeout,Reason} -> 
 				ResponseMsg = string:join(["addUsersToSessionResponse","timeout"|Reason], "^"),
-				gen_tcp:send(ClientSocket, list_to_binary(ResponseMsg)),
+				sendClient(ClientSocket,ResponseMsg),
 				userLoop(ClientSocket);
 			
 			{removeUserFromSessionResponse, success, Response} -> 
 				ResponseMsg = string:join(["removeUserFromSessionResponse","success"|Response], "^"),
-				gen_tcp:send(ClientSocket, list_to_binary(ResponseMsg)),
+				sendClient(ClientSocket,ResponseMsg),
 				userLoop(ClientSocket);
 			{removeUserFromSessionResponse, failure,Reason} ->
 				ResponseMsg = string:join(["removeUserFromSessionResponse","failure"|Reason], "^"),
-				gen_tcp:send(ClientSocket, list_to_binary(ResponseMsg)),
+				sendClient(ClientSocket,ResponseMsg),
 				userLoop(ClientSocket);
 			{removeUserFromSessionResponse, timeout,Reason} -> 
 				ResponseMsg = string:join(["removeUserFromSessionResponse","timeout"|Reason], "^"),
-				gen_tcp:send(ClientSocket, list_to_binary(ResponseMsg)),
+				sendClient(ClientSocket,ResponseMsg),
 				userLoop(ClientSocket);
 			
 			{chatResponse, success, Response} ->
 				ResponseMsg = string:join(["chatResponse","success"|Response],"^"),
-				gen_tcp:send(ClientSocket, list_to_binary(ResponseMsg)),
+				sendClient(ClientSocket,ResponseMsg),
 				userLoop(ClientSocket);
 			{chatResponse, failure, Reason} ->
 				ResponseMsg = string:join(["chatResponse","failure"|Reason],"^"),
-				gen_tcp:send(ClientSocket, list_to_binary(ResponseMsg)),
+				sendClient(ClientSocket,ResponseMsg),
 				userLoop(ClientSocket);
 			{chatResponse, timeout, Reason} ->
 				ResponseMsg = string:join(["chatResponse","timeout"|Reason],"^"),
-				gen_tcp:send(ClientSocket, list_to_binary(ResponseMsg)),
+				sendClient(ClientSocket,ResponseMsg),
 				userLoop(ClientSocket);
 			endProcess ->
 				clientDone
 		after 100 ->
 			userLoop(ClientSocket)
 		end.
+
+
+sendClient(ClientSocket,Message)->
+	ResponseMessage=string:concat(Message,"~"),
+	gen_tcp:send(ClientSocket, list_to_binary(ResponseMessage)).
