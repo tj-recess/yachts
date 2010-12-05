@@ -22,9 +22,10 @@ start()->
 
 initRegisteredUserList()->
 	application:start(odbc),
-	WinConnString="Driver={MySQL ODBC 5.1 Driver};Server=localhost;Database=yachts;User=root;Password=root;Option=3;",
+	%WinConnString="Driver={MySQL ODBC 5.1 Driver};Server=localhost;Database=yachts;User=root;Password=root;Option=3;",
 	ConnString="DSN=yachts;UID=root;PWD=root",
 	{ok, Conn}=odbc:connect(ConnString, []),
+	pg2:create(login),	%change
 	loginManagerDB(dict:new(), Conn).
 
 
@@ -32,19 +33,19 @@ registerUser(Username, Password, FirstName, LastName, Location, EmailId)
   -> loginManager ! {self(), register, {Username, Password, FirstName, LastName, Location, EmailId}},
 	receive
 		success ->
-			{success,["User logged in successfully"]};
+			{success,["You have been registered successfully"]};
 		{error, Reason} ->
 			{failure, [Reason]}
-	after 5000 -> 
-		{timeout,["Operation timed out, Try again later!"]}
+%% 	after 5000 -> 
+%% 		{timeout,["Operation timed out, Try again later!"]}
 	end.
 
 loginUser(UserPid, Username, Password)->
 	io:format("received params : ~w ~w ~w ~n",[UserPid,Username, Password]),
 	loginManager ! {self() , login , Username, Password, UserPid},
 	receive
-		already -> {true, ["user already logged in."]};
-		success -> {true, ["user logged in successfully."]};
+		already -> {true, ["You are already logged in"]};
+		success -> {true, ["You have been logged in successfully"]};
 		failure -> {false,["Incorrect Username or Password."]};
 		Result -> Result
 	after 2000 ->
@@ -62,7 +63,8 @@ getAllLoggedInUsers() ->
 getUserInfo(Username) ->
 	loginManager ! {self(), info, Username},
 	receive
-		Status -> Status
+		{ok,[Value]} -> {ok,[Value]};
+		error -> error
 	after 2000 ->
 		io:format("Operation Timed Out, try again later")
 	end.
@@ -91,9 +93,16 @@ loginManagerDB(LoggedInUserList, Conn)->
 				{{sql_varchar, 30},[EmailId]}]
 				),
 			case Result of
-				{updated, _ } ->
-					From ! success;
-			 	{error, Reason } ->
+				{updated, RowCount } ->
+					case RowCount of
+						0 -> 
+							From ! {error, "Username already exists"};
+						1 -> 
+							From ! success;
+						Weird ->
+							io:format("~n unexpected rows updated in register user ~w",[Weird])
+					end;	
+			 	{error, _ } ->
 					From ! Result
 			end,
 			loginManagerDB(LoggedInUserList, Conn);
@@ -117,6 +126,7 @@ loginManagerDB(LoggedInUserList, Conn)->
 							loginManagerDB(LoggedInUserList, Conn);
 						{selected, _, [H|_]} -> 
 							NewList = dict:append(Username, {H,UserPid}, LoggedInUserList),
+							pg2:join(login,UserPid), %change
 							From ! success,
 							loginManagerDB(NewList, Conn);
 						{error, _ } ->	
@@ -129,9 +139,29 @@ loginManagerDB(LoggedInUserList, Conn)->
 			From ! dict:fetch_keys(LoggedInUserList),
 			loginManagerDB(LoggedInUserList, Conn);
 
+		
 		{From, info, Username} ->
-			From ! dict:find(Username, LoggedInUserList),
-			loginManagerDB(LoggedInUserList, Conn);
+			case dict:find(Username, LoggedInUserList) of 
+				{ok,[{Info,UserPid}]} ->
+					case lists:member(UserPid,pg2:get_members(login)) of
+						true ->
+							From ! {ok,[{Info,UserPid}]},
+							loginManagerDB(LoggedInUserList, Conn);
+						_ -> 
+							From ! error,
+							%cleanup loggedInUsersList
+							NewLoggedInUserList = dict:erase(Username, LoggedInUserList),
+							loginManagerDB(NewLoggedInUserList, Conn)
+					end;
+				error ->
+							From ! error,
+							loginManagerDB(LoggedInUserList, Conn);
+				Weird ->
+					io:format("received weird value in getUserInfo : ~w ~n",[Weird]),
+					From ! error,
+					loginManagerDB(LoggedInUserList, Conn)
+			end;
+		
 		
 		{From, getAll} ->
 			From ! LoggedInUserList,

@@ -25,7 +25,7 @@ handleClient(ClientSocket) ->
     case gen_tcp:recv(ClientSocket, 0) of
         {ok, Data} ->
 			D = binary_to_list(Data),
-			io:format("user sent ~w", [list_to_atom(D)]),
+			io:format("~nuser sent ~w", [list_to_atom(D)]),
 			
 			%%Parse the data first and take appropriate action
 			%check if more than one cmds were received together			
@@ -35,40 +35,83 @@ handleClient(ClientSocket) ->
             ok
     end.
 
+executePostLoginCommands([],ClientSocket) ->
+	done;
+executePostLoginCommands([H|T], ClientSocket) ->
+	case H of
+				{createSession, ListOfUsers} ->
+					io:format("~n client sent : createSession, params: ~w",[ListOfUsers]),
+					sessionManager:createSession(ListOfUsers);
+					
+				{addUsersToSession, [SessionID|ListOfUsers]} ->
+					io:format("~n client sent : addUsersToSession, params: Session ID ~w UserList~w",[SessionID,ListOfUsers]),
+					{IntSessionID, _} = string:to_integer(SessionID),
+					sessionManager:addUsersToSession({IntSessionID, ListOfUsers});
+
+				{removeUserFromSession, [SessionID,Username]} ->
+					io:format("~n client sent : removeUserFromSession, params: Session ID~w Username ~w",[SessionID,Username]),
+					{IntSessionID, _} = string:to_integer(SessionID),
+					sessionManager:removeUserFromSession({IntSessionID, Username});
+				
+				{chat, [Sender|[SessionID|Text]]}->
+					io:format("~n client sent : chat, params: Sender ~w Session ID ~w Text ~w",[Sender,SessionID,Text]),
+					{IntSessionID, _} = string:to_integer(SessionID),
+					sessionManager:chat({Sender, IntSessionID, string:join(Text,"^")});
+
+				getAllLoggedInUsers ->
+					LoggedInUsersList = userManager:getAllLoggedInUsers(),
+					Status = string:concat(string:join(["LoggedInUsers"|LoggedInUsersList],"^"),"\n"),
+					
+					gen_tcp:send(ClientSocket, list_to_binary(Status));
+				logout ->
+					done;
+				_ ->
+					ignore_junk_request
+		
+	end,
+	executePostLoginCommands(T, ClientSocket).
+
+
+
+
+
+
+
+
 
 executeCommands([],ClientSocket) ->
 	done;
 executeCommands([H|T], ClientSocket) ->
 	case H of
 		{register,[Username, Password, FirstName, LastName, Location, EmailId]} ->
-			io:format("User sent : register"),
+			io:format("~nUser sent : register"),
 			Result = userManager:registerUser(Username, Password, FirstName, LastName, Location, EmailId),
 			case Result of
 				{success, Reason} -> 
 					Status = string:join(["RegisterResponse","success"|Reason], "^"),
-					gen_tcp:send(ClientSocket, list_to_binary(Status));
+					sendClient(ClientSocket,Status);
 				{failure,Reason} ->
 					Status = string:join(["RegisterResponse","failure"|Reason], "^"),
-					gen_tcp:send(ClientSocket, list_to_binary(Status));
+					sendClient(ClientSocket,Status);
 				{timeout,Reason} -> 
 					Status = string:join(["RegisterResponse","failure"|Reason], "^"),
-					gen_tcp:send(ClientSocket, list_to_binary(Status))
+					sendClient(ClientSocket,Status)
 			end;
 		{login, [Username, Password]} ->
-			io:format("User sent : login"),
+			io:format("~nUser sent : login"),
 			Pid = spawn(?MODULE, userLoop, [ClientSocket]),
 			Result = userManager:loginUser(Pid, Username, Password),
 			case Result of
 				{true, Reason} -> 
 					Status = string:join(["LoginResponse","success"|Reason], "^"),
-					gen_tcp:send(ClientSocket, list_to_binary(Status));							
+					sendClient(ClientSocket,Status);							
 				{false,Reason} ->
 					Status = string:join(["LoginResponse","failure"|Reason], "^"),
-					gen_tcp:send(ClientSocket, list_to_binary(Status)),
+					sendClient(ClientSocket,Status),
 					exit(Pid, kill);
 				{timeout,Reason} -> 
 					Status = string:join(["LoginResponse","failure"|Reason], "^"),
-					gen_tcp:send(ClientSocket, list_to_binary(Status)),
+					sendClient(ClientSocket,Status),
 					exit(Pid, kill)
 			end;
 		
@@ -116,35 +159,10 @@ userLoop(ClientSocket) ->
 	%%wait for 100 ms for user to send a command first,
 	case gen_tcp:recv(ClientSocket, 0, 100) of
     {ok, Data} ->
+		D = binary_to_list(Data),
+			io:format("~nReceived message ~w", [list_to_atom(D)]),
 		%%Parse the data first and take appropriate action
-            case parseSingleCmd(binary_to_list(Data)) of
-				{createSession, ListOfUsers} ->
-					sessionManager:createSession(ListOfUsers);
-					
-				{addUsersToSession, [SessionID|ListOfUsers]} ->
-					io:format("~n clien sent : addUsersToSession, params: ~w ~w",[SessionID,ListOfUsers]),
-					{IntSessionID, _} = string:to_integer(SessionID),
-					sessionManager:addUsersToSession({IntSessionID, ListOfUsers});
-
-				{removeUserFromSession, [SessionID,Username]} ->
-					io:format("~n clien sent : removeUserFromSession, params: ~w ~w",[SessionID,Username]),
-					{IntSessionID, _} = string:to_integer(SessionID),
-					sessionManager:removeUserFromSession({IntSessionID, Username});
-				
-				{chat, [Sender|[SessionID|Text]]}->
-					{IntSessionID, _} = string:to_integer(SessionID),
-					sessionManager:chat({Sender, IntSessionID, string:join(Text,"^")});
-
-				getAllLoggedInUsers ->
-					LoggedInUsersList = userManager:getAllLoggedInUsers(),
-					Status = string:concat(string:join(["LoggedInUsers"|LoggedInUsersList],"^"),"\n"),
-					
-					gen_tcp:send(ClientSocket, list_to_binary(Status));
-				logout ->
-					done;
-				_ ->
-					ignore_junk_request
-			end;
+		executePostLoginCommands(parseClientMessage(string:tokens(D, "~"),[]),ClientSocket);
 
 	{error, timeout} ->
 		Var = "" ; %%Do nothing here as this is intentional timeout for polling
@@ -153,25 +171,14 @@ userLoop(ClientSocket) ->
 		self() ! endProcess;
 		
 	{error, ErrReason} ->
-    	io:format("Error while receving on socket ~w. Reason : ~w ~n",[ClientSocket,ErrReason]),
+    	io:format("~nError while receving on socket ~w. Reason : ~w ",[ClientSocket,ErrReason]),
 		self() ! endProcess
 			
 	end,	
 			
 		%%otherwise just wait for another 100 ms for other process to send some data	
 		receive
-			{createSessionResponse, success, Response} -> 
-				ResponseMsg = string:join(["CreateSessionResponse","success"|Response], "^"),
-				sendClient(ClientSocket,ResponseMsg),
-				userLoop(ClientSocket);
-			{createSessionResponse, failure,Reason} ->
-				ResponseMsg = string:join(["CreateSessionResponse","failure"|Reason], "^"),
-				sendClient(ClientSocket,ResponseMsg),
-				userLoop(ClientSocket);
-			{createSessionResponse, timeout,Reason} -> 
-				ResponseMsg = string:join(["CreateSessionResponse","timeout"|Reason], "^"),
-				sendClient(ClientSocket,ResponseMsg),
-				userLoop(ClientSocket);
+		
 			{addUsersToSessionResponse, success, Response} -> 
 				ResponseMsg = string:join(["addUsersToSessionResponse","success"|Response], "^"),
 				sendClient(ClientSocket,ResponseMsg),
@@ -219,4 +226,5 @@ userLoop(ClientSocket) ->
 
 sendClient(ClientSocket,Message)->
 	ResponseMessage=string:concat(Message,"~"),
-	gen_tcp:send(ClientSocket, list_to_binary(ResponseMessage)).
+	gen_tcp:send(ClientSocket, list_to_binary(ResponseMessage)),
+	io:format("~nMESSAGE SENT ~s",[ResponseMessage]).
