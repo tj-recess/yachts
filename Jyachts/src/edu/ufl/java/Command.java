@@ -1,13 +1,18 @@
 package edu.ufl.java;
 
-import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
-import org.apache.commons.lang.*;
 
-public class Command {
+public class Command
+{
+		private LoginManager loginManager = null;
 		
+		public Command()
+		{
+			loginManager = LoginManager.getLoginManager();
+		}
+	
 		// parses the input string into a string array 
 		public String[] parse(String inputstring){
 			String[] params = new String[10];
@@ -23,78 +28,70 @@ public class Command {
 		}
 		
 		// login processing
-		public boolean loginCommand(String commandstring,String socketinfo,Socket conn) {
+		public boolean loginCommand(ArrayList<String> params, Socket conn) {
 			System.out.println("COMMANDPARSER: Received login command...");
 			System.out.println("COMMANDPARSER: Socket Details: "+conn);
-			
-			String[] params = new String[10];
-			
-			params = parse(commandstring);
-			DBManager dbm = new DBManager();
-			
-			return dbm.login(params[1], params[2],socketinfo,conn);
+
+			loginManager = LoginManager.getLoginManager();
+			return loginManager.loginUser(params.get(1), params.get(2), conn);
 			
 		}
 		
 		// registers a new user
-		public boolean registerCommand(String commandstring) {
+		public boolean registerCommand(ArrayList<String> params) {
 			System.out.println("COMMANDPARSER: Received register command...");
-			String[] params = new String[10];
-			
-			params = parse(commandstring);
-			
-			// register the user
-			User newuser = new User(params[1], params[2], params[3], params[4],params[5],params[6]);
 			DBManager dbm = new DBManager();
-			dbm.addUserToDB(newuser);
 			
-			System.out.println("COMMANDPARSER: User added to database");
-			return true;
+			if (dbm == null)
+				return false;
+			
+			return dbm.registerUser(new User(params.get(3),params.get(4), params.get(1), params.get(2), params.get(5), params.get(6)));
 		}
 
-		public String createSessionCommand(String inputstring) {
-			// TODO Auto-generated method stub
+		public void createSessionCommand(ArrayList<String> params) {
+
 			System.out.println("COMMANDPARSER: received create session command ");
-			String[] params = new String[10];
-			String userList="", successmesg="";
-			ArrayList<String> usersInSession = new ArrayList<String>();
 			
-			params = parse(inputstring);
+			params.remove(0);//remove command name
 			
 			try{
 				// register the session
-				Session session = new Session(true); // this is a group chat - true for all cases
-				
-				for (int i=1; i<=StringUtils.countMatches(inputstring, "^");i++){
-					User u = DBManager.getUser(params[i]);
-					session.addUser(u); // add all users to session
-					userList += "^"+params[i];
-					usersInSession.add(params[i]);
-					System.out.println("User's connection details: "+LoginManager.getLoginManager().loggedInUsersSockets.get(params[i]));
-				}
-				successmesg = "CreateSessionResponse^SUCCESS^"+session.getSessionID()+userList;
-				// send message to all users in session
-				
-				// inform to each user
-				for (int j=0;j<usersInSession.size();j++){
-					Socket s = LoginManager.getLoginManager().loggedInUsersSockets.get(usersInSession.get(j));
-					PrintWriter pw = new PrintWriter(s.getOutputStream());
-					pw.println(successmesg);
-					pw.flush();
-				}
-					
-				return successmesg;
-				
+				SessionManager.getSessionManager().createSession(params);
 			}catch(Exception e){
 				System.out.println("COMMANDPARSER: ERROR: Error in Creating Session");
 				e.printStackTrace();
-				return "CreateSessionResponse^ERROR";
+			}
+		}
+		
+		public void addUsersToSessionCommand(ArrayList<String> params) {
+
+			System.out.println("COMMANDPARSER: received add users to session command ");
+
+			params.remove(0);//remove command name
+			String sessionID = params.get(0);
+			params.remove(0);//remove sessionID
+			try{
+				// register the session
+				SessionManager.getSessionManager().addUserToSession(sessionID, params);
+			}catch(Exception e){
+				System.out.println("COMMANDPARSER: ERROR: Error in Add User To Session");
+				e.printStackTrace();
 			}
 		}
 
-		public String getAllLoggedInUsers(String inputstring) {
+		public String getAllLoggedInUsers() {
 			// TODO Auto-generated method stub
 			System.out.println("COMMANDPARSER: Received getAllLoggedInUsers command...");
 			return LoginManager.getLoginManager().getLoggedInUsers();
+		}
+		
+		public void removeUserFromSessionCommand(ArrayList<String> params)
+		{
+			SessionManager.getSessionManager().removeUserFromSession(params.get(1), params.get(2));
+		}
+		
+		public void chat(ArrayList<String> params)
+		{
+			SessionManager.getSessionManager().chat(params.get(1), params.get(2), params.get(3));
 		}
 }
