@@ -35,7 +35,7 @@ getAll() ->
 	receive
 		{getAll,SessionList,Count} -> {SessionList,Count}
 	after 2000 ->
-		io:format("Operation Timed Out, try again later")
+		io:format("~nOperation Timed Out, try again later")
 	end.
 
 find(Key) ->
@@ -43,7 +43,7 @@ find(Key) ->
 	receive
 		{find,Value} -> Value
 	after 2000 ->
-		io:format("Operation Timed Out, try again later")
+		io:format("~nOperation Timed Out, try again later")
 	end.
 
 
@@ -55,7 +55,7 @@ createSession(UserList)->
 			{ok,[{_,UserPid}]}->
 				sessionManagerPid ! {create,UserList};
 			Weird ->
-					io:format("received weird value in createSession: ~w ~n",[Weird])
+					io:format("~nreceived weird value in createSession: ~w ~n",[Weird])
 		end.
 		
 addUsersToSession({SessionID,[User|T]})->
@@ -65,7 +65,7 @@ addUsersToSession({SessionID,[User|T]})->
 			{ok,[{_,UserPid}]} ->
 				sessionManagerPid ! {add,SessionID,User,T,UserPid};
 			Weird ->
-					io:format("received weird value in addUsersToSession: ~w ~n",[Weird])
+					io:format("~nreceived weird value in addUsersToSession: ~w ~n",[Weird])
 	end.	
 	
 chat({User,SessionID,Message})->
@@ -75,19 +75,17 @@ chat({User,SessionID,Message})->
 			{ok,[{_,UserPid}]} ->
 				sessionManagerPid ! {chat,User,SessionID,Message,UserPid};
 			Weird ->
-					io:format("received weird value in chatMessage: ~w ~n",[Weird])
+					io:format("~nreceived weird value in chatMessage: ~w ~n",[Weird])
 		end.	
 
 removeUserFromSession({SessionID,User})->
-	io:format("remove user ~w ~p", [SessionID,User]),
 		case userManager:getUserInfo(User) of	%check whether user is logged in
 			error -> 
 				{removeUserFromSessionResponse,false,["Invalid Username"]};
 			{ok,[{_,UserPid}]}->
-				io:format("user found !"),
 				sessionManagerPid ! {remove,User,SessionID,UserPid};
 			Weird ->
-					io:format("received weird value in removeUserFromSession: ~w ~n",[Weird])
+					io:format("~nreceived weird value in removeUserFromSession: ~w ~n",[Weird])
 		end.
 
 
@@ -117,11 +115,11 @@ sessionList(SessionList,Count)->
 								NewSessionList=dict:store(SessionID,[{lists:append(UsersInSession, AddedUsers)}], SessionList),
 								sessionList(NewSessionList,Count);
 							Present ==false ->
-								UserPid ! {addUsersToSessionResponse,failure,["User not part of session"]},
+								UserPid ! {addUsersToSessionResponse,failure,["You are not part of the chatroom and so you cannot add members"]},
 								sessionList(SessionList,Count)
 						end;
 				Weird ->
-					io:format("received weird value in add: ~w ~n",[Weird]),
+					io:format("~nreceived weird value in add: ~w ~n",[Weird]),
 					sessionList(SessionList, Count)
 			
 			end;
@@ -138,15 +136,14 @@ sessionList(SessionList,Count)->
 								sendMessage(TotalUsersPids,{chatResponse,success,[string:join([integer_to_list(SessionID),User,Message],":")]}),
 								sessionList(SessionList,Count);
 							Present == false ->
-								UserPid ! {chatResponse,failure,["User not part of session"]},
+								UserPid ! {chatResponse,failure,["You are not part of the chatroom"]},
 								sessionList(SessionList,Count)
 						end;
 				Weird ->
-					io:format("received weird value in chat: ~w ~n",[Weird]),
+					io:format("~nreceived weird value in chat: ~w ~n",[Weird]),
 					sessionList(SessionList, Count)
 			end;
 		{remove,User,SessionID,UserPid} ->
-			io:format("Session ID ~w User Pid ~p_",[SessionID,UserPid]),
 			case dict:find(SessionID, SessionList) of
 				error -> %% if SessionID is invalid 
 					UserPid ! {removeUserFromSessionResponse,failure,["Invalid Session ID"]},
@@ -174,12 +171,12 @@ sessionList(SessionList,Count)->
 								sessionList(SessionList,Count)
 						end;
 				Weird ->
-					io:format("received weird value in remove : ~w ~n",[Weird]),
+					io:format("~nreceived weird value in remove : ~w ~n",[Weird]),
 					sessionList(SessionList, Count)
-			end;
-		Weird ->
-					io:format("received weird value in sessionList: ~w ~n",[Weird]),
-					sessionList(SessionList, Count)
+			end
+%% 		Weird ->
+%% 					io:format("received weird value in sessionList: ~w ~n",[Weird]),
+%% 					sessionList(SessionList, Count)
 		
 	end.
 
@@ -205,14 +202,14 @@ addToSession([User|T],SessionID,AddedUsers,CurrentUsers) ->
 						{error,Reason} -> Reason, 	%the user is logged in but could not be added to chat room
 							addToSession(T,SessionID,AddedUsers,CurrentUsers);
 						Weir ->
-							io:format("received weird value in addToSession pg2:join : ~w ~n",[Weir]),
+							io:format("~nreceived weird value in addToSession pg2:join : ~w ~n",[Weir]),
 							addToSession(T,SessionID,AddedUsers,CurrentUsers)
 			 		end;
 				 Present == true ->
 							addToSession(T,SessionID,AddedUsers,CurrentUsers)
 			end;
 		Weird ->
-					io:format("received weird value in addToSession : ~w ~n",[Weird]),
+					io:format("~nreceived weird value in addToSession : ~w ~n",[Weird]),
 					addToSession(T,SessionID,AddedUsers,CurrentUsers)
 	end.
 
