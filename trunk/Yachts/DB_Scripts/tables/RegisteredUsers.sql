@@ -1,6 +1,8 @@
-USE yachts;
-CREATE TABLE RegisteredUsers(UserID INTEGER AUTO_INCREMENT PRIMARY KEY,
-Username VARCHAR(20),
+DELIMITER $$
+USE yachts;$$
+DROP TABLE IF EXISTS RegisteredUsers;$$
+CREATE TABLE RegisteredUsers(
+Username VARCHAR(20) PRIMARY KEY,
 Password VARCHAR(30),
 FirstName VARCHAR(30),
 LastName VARCHAR(30),
