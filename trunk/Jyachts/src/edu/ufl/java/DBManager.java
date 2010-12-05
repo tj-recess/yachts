@@ -1,18 +1,62 @@
 package edu.ufl.java;
 
-import java.io.PrintWriter;
-import java.net.Socket;
-import java.util.ArrayList;
-import org.hibernate.HibernateException;
-import org.hibernate.Session;               
-import org.hibernate.Transaction;           
-import org.hibernate.criterion.Restrictions;
+
+import java.sql.*;
 
 /* manage all database stuff */ 
 public class DBManager {
 	
+	private String connString = "jdbc:mysql://localhost/yachts";
+	private Connection conn = null;
+	
+	public DBManager()
+	{
+		try
+		{
+			Class.forName("com.mysql.jdbc.Driver").newInstance();
+			conn = DriverManager.getConnection(connString,"root","root");
+		}
+		catch(SQLException sqlEx)
+		{
+			System.out.println("Exception in SQL Connection : " + sqlEx.toString());
+		} catch (InstantiationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public boolean registerUser(User aUser)
+	{
+		try{
+			CallableStatement callProc = conn.prepareCall("{call RegisterUser(?,?,?,?,?,?)}");
+
+			callProc.setString("Username", aUser.getUsername());
+			callProc.setString("Password", aUser.getPassword());
+			callProc.setString("FirstName", aUser.getFirstName());
+			callProc.setString("LastName", aUser.getLastName());
+			callProc.setString("Location", aUser.getLocation());
+			callProc.setString("EmailId", aUser.getEmailAddress());
+			if (callProc.executeUpdate() == 1)
+				return true;
+			else 
+				return false;
+		}
+		catch(SQLException sqlEx)
+		{
+			System.out.println("Exception in SQL Connection : " + sqlEx.toString());
+			return false;
+		}
+	}
+	
+/*	
 	public boolean addUserToDB(User newuser){
-		Session session = HibernateUtils.getSession();			    
+		Session session = HibernateUtils.getSession();
 		Transaction tx = null;
 		try{
 			tx=session.beginTransaction();
@@ -41,7 +85,7 @@ public class DBManager {
 		
 		try{
 			// search for users in the database which matches the specified username
-			u = (ArrayList) (session.createCriteria(User.class)
+			u = (ArrayList<User>) (session.createCriteria(User.class)
 					.add( Restrictions.eq("Username", username))
 					.list());
 		
@@ -71,6 +115,7 @@ public class DBManager {
 		}
 		//System.out.println("User name: "+userarray.get(0).getFirstName());
 	}
+
 	public static User getUser(String username){
 		
 			ArrayList<User> u = new ArrayList<User>(); 
@@ -101,5 +146,27 @@ public class DBManager {
 			finally {
 				session.close();
 			}		
+	}
+	*/
+	
+	public User loginUser(String username, String password)
+	{
+		try{
+			CallableStatement callProc = conn.prepareCall("{call GetUserInfo(?,?)}");
+
+			callProc.setString("someUsername", username);
+			callProc.setString("somePassword", password);
+			
+			ResultSet rs = callProc.executeQuery();
+			if (rs.next())
+				return new User(rs.getString("FirstName"), rs.getString("LastName"), username, password, rs.getString("Location"), rs.getString("EmailID"));				
+			else
+				return null;
+		}
+		catch(SQLException sqlEx)
+		{
+			System.out.println("Exception in SQL Connection : " + sqlEx.toString());
+			return null;
+		}
 	}
 }
