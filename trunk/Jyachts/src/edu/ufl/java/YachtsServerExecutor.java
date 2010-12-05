@@ -2,6 +2,7 @@ package edu.ufl.java;
 
 import java.io.*;
 import java.net.*;
+import java.util.ArrayList;
 import java.util.StringTokenizer;
 import java.util.concurrent.*;
 
@@ -79,52 +80,60 @@ public class YachtsServerExecutor {
 		
 		public String processCommand(String inputstring){
 			// get the command
-			StringTokenizer st = new StringTokenizer(inputstring,"^");
+			ArrayList<String> tokensList = Utils.parse(inputstring);
 			boolean flag=true, status;
-			String token ="";
-			String socketinfo = ""+conn.getRemoteSocketAddress();
+
 			Command cmd = new Command();
-			
-			while(st.hasMoreTokens()){
-				if(flag){
-					// first token
-					token = st.nextToken();
-					
-					System.out.println("YACHTSERVER: Extracted command: "+token);
-					flag=false;
-					
-					if(token.equalsIgnoreCase("REGISTER")){
-						status = cmd.registerCommand(inputstring);
-						return ""+status;
-					}
-					
-					else if(token.equalsIgnoreCase("LOGIN")){
-						System.out.println("YACHTSERVER: Login: Client socket details: "+this.conn);
-						status = cmd.loginCommand(inputstring,socketinfo,this.conn);
-						
-						if (status){
-							// logged in success message
-							return "LoginResponse^SUCCESS^User authenticated successfully";
-						}
-						
-						return "LoginResponse^ERROR^Login Error. Check your credentials";
-					}
-					
-					else if(token.equalsIgnoreCase("CreateSession")){
-						String sessionCreationStatus = cmd.createSessionCommand(inputstring);
-						return sessionCreationStatus;
-					}
-					
-					else if(token.equalsIgnoreCase("getAllLoggedInUsers")){
-						String userlist = cmd.getAllLoggedInUsers(inputstring);
-						System.out.println("YACHTSERVER: User list: "+userlist);
-						return userlist;
-					}
-					else{
-						// unknown command
-						System.out.println("YACHTSERVER: ERROR: Unknown command from Client");
-					}
+			String cmdName = tokensList.get(0);
+			System.out.println("YACHTSERVER: Extracted command: "+ cmdName);
+			flag=false;
+				
+			if(cmdName.equalsIgnoreCase("REGISTER"))
+			{
+				status = cmd.registerCommand(tokensList);
+				if (status)
+					return "RegisterResponse^success^You have been Registered Successfully";
+				else
+					return "RegisterResponse^failure^Registration Failed";
+			}				
+			else if(cmdName.equalsIgnoreCase("LOGIN"))
+			{
+				System.out.println("YACHTSERVER: Login: Client socket details: "+this.conn);
+				status = cmd.loginCommand(tokensList,this.conn);
+				
+				if (status){
+					// logged in success message
+					return "LoginResponse^success^User authenticated successfully";
 				}
+				
+				return "LoginResponse^failure^Login Error. Check your credentials";
+			}
+			
+			else if(cmdName.equalsIgnoreCase("CreateSession"))
+			{
+				cmd.createSessionCommand(tokensList);
+			}
+			
+			else if(cmdName.equalsIgnoreCase("AddUsersToSession"))
+			{
+				cmd.addUsersToSessionCommand(tokensList);
+			}
+			
+			else if(cmdName.equalsIgnoreCase("getAllLoggedInUsers")){
+				String userlist = cmd.getAllLoggedInUsers();
+				System.out.println("YACHTSERVER: User list: "+userlist);
+				return userlist;
+			}
+			else if(cmdName.equalsIgnoreCase("Chat")){
+				// find out session in which the message was posted
+				
+				// post message to all session participants
+				return "Received chat message: "+inputstring;
+			}
+			else{
+				// unknown command
+				System.out.println("YACHTSERVER: ERROR: Unknown command from Client: "+inputstring);
+				return "Error: Unknown command received: "+inputstring;
 			}
 			return "<error>";
 		}
