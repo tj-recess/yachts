@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.StringTokenizer;
 import java.util.TreeSet;
+import java.util.concurrent.*;
 
 
 
@@ -20,20 +21,22 @@ import java.util.TreeSet;
 
 public class YachtsClientErlang implements Runnable {
 	
-	
+	static ExecutorService executor;
 	static final String LOCATION = System.getProperty("user.home")+"/chatlogs";
 	//static final String[] COMMANDS = {"login^userXX^pwd","createsession^userXX^userYY","adduserstosession^SS^userXX^userYY^userZZ","chat^userXX^SS^Hello","chat^userXX^SS^Bye","removeuserfromsession^SS^userXX"};
 	static final String[] COMMANDS = {"register^userXX^pwd^usXX^usrXX^usa^userXX@gmail.com"};
 	static volatile int COUNT=1;
-	static final int NUM_USERS= 1600;
+	static final int NUM_USERS= 102;
 	static final int PORT_NO = 3000;
 	
 	public static void main(String[] arg) throws Throwable {
 		(new File(LOCATION)).mkdir();
 		YachtsClientErlang yachtsClient = new YachtsClientErlang();	
 		while(COUNT<NUM_USERS){
-			Thread t = new Thread(yachtsClient,Integer.toString(COUNT++));
-			t.start();
+			executor = Executors.newCachedThreadPool();
+			executor.execute(new Thread(yachtsClient,Integer.toString(COUNT++)));
+//			Thread t = new Thread(yachtsClient,Integer.toString(COUNT++));
+//			t.start();
 			
 		}
 		
@@ -126,11 +129,11 @@ public class YachtsClientErlang implements Runnable {
 		 			
 		 			responseList= parse(serverresp);
 		 			String responseType=responseList.get(0);
-		 			if("loginResponse".equalsIgnoreCase(responseType)){
+		 			if("registerResponse".equalsIgnoreCase(responseType)){
 						if("success".equalsIgnoreCase(responseList.get(1))){
 							
 				 				//fout.append(responseList.get(2)+"\n");
-				 				login=true;
+				 				
 				 										
 						}
 						else{
