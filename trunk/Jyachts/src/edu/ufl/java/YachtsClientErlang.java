@@ -34,7 +34,7 @@ public class YachtsClientErlang implements Runnable {
 		YachtsClientErlang yachtsClient = new YachtsClientErlang();	
 		while(COUNT<NUM_USERS){
 			executor = Executors.newCachedThreadPool();
-			executor.execute(new Thread(yachtsClient,Integer.toString(COUNT++)));
+			executor.execute(new Thread(yachtsClient));
 //			Thread t = new Thread(yachtsClient,Integer.toString(COUNT++));
 //			t.start();
 			
@@ -53,7 +53,7 @@ public class YachtsClientErlang implements Runnable {
 	
 	void runSingleClient() throws Throwable{
 
-		String userID = Thread.currentThread().getName();
+		String userID = Integer.toString(COUNT++);
 		Socket connection = new Socket("localhost", PORT_NO);
 		InputStreamReader isr = new InputStreamReader(connection.getInputStream());
 		BufferedReader in = new BufferedReader(isr);
