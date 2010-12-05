@@ -2,6 +2,7 @@ package edu.ufl.java;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.InputStreamReader;
@@ -21,14 +22,14 @@ public class YachtsClientErlang implements Runnable {
 	
 	
 	static final String LOCATION = System.getProperty("user.home")+"/chatlogs";
-	static final String[] COMMANDS = {"login^userXX^pwd","createsession^userXX^userYY","adduserstosession^SS^userXX^userYY^userZZ","chat^userXX^SS^Hello","chat^userXX^SS^Bye"};
-	//String[] commands = {"register^userXX^pwd^usXX^usrXX^usa^userXX@gmail.com"};
+	//static final String[] COMMANDS = {"login^userXX^pwd","createsession^userXX^userYY","adduserstosession^SS^userXX^userYY^userZZ","chat^userXX^SS^Hello","chat^userXX^SS^Bye","removeuserfromsession^SS^userXX"};
+	static final String[] COMMANDS = {"register^userXX^pwd^usXX^usrXX^usa^userXX@gmail.com"};
 	static volatile int COUNT=1;
-	static final int NUM_USERS= 20;
+	static final int NUM_USERS= 1600;
 	static final int PORT_NO = 3000;
 	
 	public static void main(String[] arg) throws Throwable {
-		
+		(new File(LOCATION)).mkdir();
 		YachtsClientErlang yachtsClient = new YachtsClientErlang();	
 		while(COUNT<NUM_USERS){
 			Thread t = new Thread(yachtsClient,Integer.toString(COUNT++));
@@ -54,19 +55,22 @@ public class YachtsClientErlang implements Runnable {
 		InputStreamReader isr = new InputStreamReader(connection.getInputStream());
 		BufferedReader in = new BufferedReader(isr);
 		String clientreq;
-		BufferedWriter	fout = new BufferedWriter(new FileWriter(LOCATION+"/user"+userID+".txt"));
+		//BufferedWriter	//fout = new BufferedWriter(new FileWriter(LOCATION+"/user"+userID+".txt"));
 		int messageCount=0;
 		PrintWriter out = new PrintWriter(connection.getOutputStream());
 		
 		TreeSet<String> sessions = new TreeSet<String>();
 		ArrayList<String>  responseList = new ArrayList<String>();
 		ArrayList<String>  requestList = new ArrayList<String>();
-		while(true){
+		boolean login=false;
+		do{
 			
 			if(messageCount<COMMANDS.length){
 				clientreq=COMMANDS[messageCount++];
 				requestList = parse(clientreq);
 				String requestType= requestList.get(0);
+				
+				
 				
 				if("login".equalsIgnoreCase(requestType)){
 					clientreq=clientreq.replace("XX",userID );
@@ -90,18 +94,23 @@ public class YachtsClientErlang implements Runnable {
 					clientreq=clientreq.replace("SS", sessions.first());
 					
 				}
+				else if("removeuserfromsession".equalsIgnoreCase(requestType)){
+					clientreq=clientreq.replace("XX", userID);
+					clientreq=clientreq.replace("SS", sessions.first());
+				}
 			
 				System.out.println("User"+userID+" : "+clientreq);
 				
-				out.print(clientreq);
+				out.print(clientreq+"~");
 				//Thread.sleep(1000);
 				out.flush();
 			}
 			/*for erlang*/
 			
 			
-			char[] cbuf = new char[1000];			
+			char[] cbuf = new char[2000];
  			in.read(cbuf);
+ 			
  			String response = new String(cbuf);
  			//parse server response into parts
  			//System.out.println("User"+userID+" : Server Response: "+response);
@@ -117,16 +126,31 @@ public class YachtsClientErlang implements Runnable {
 		 			
 		 			responseList= parse(serverresp);
 		 			String responseType=responseList.get(0);
-		 			
-					if("loginResponse".equalsIgnoreCase(responseType)){
+		 			if("loginResponse".equalsIgnoreCase(responseType)){
 						if("success".equalsIgnoreCase(responseList.get(1))){
 							
-				 				fout.append("You were successfully logged in!!\n");
+				 				//fout.append(responseList.get(2)+"\n");
+				 				login=true;
 				 										
 						}
 						else{
 							
-								fout.append(responseList.get(2)+"\n");
+								//fout.append(responseList.get(2)+"\n");
+				 			
+						}
+						
+					}	
+
+		 			else if("loginResponse".equalsIgnoreCase(responseType)){
+						if("success".equalsIgnoreCase(responseList.get(1))){
+							
+				 				//fout.append(responseList.get(2)+"\n");
+				 				login=true;
+				 										
+						}
+						else{
+							
+								//fout.append(responseList.get(2)+"\n");
 				 			
 						}
 						
@@ -135,60 +159,66 @@ public class YachtsClientErlang implements Runnable {
 						if("success".equalsIgnoreCase(responseList.get(1))){
 							System.out.println(responseList);
 							if(sessions.contains(responseList.get(2))){
-								fout.append(responseList.get(3)+" has joined the chatroom "+responseList.get(2)+"\n");
+								//fout.append(responseList.get(3)+" has joined the chatroom "+responseList.get(2)+"\n");
 								
 								
 							}
 							else{
 								sessions.add(responseList.get(2));
-								fout.append("You have been added to chatroom "+responseList.get(2));
+								//fout.append("You have been added to chatroom "+responseList.get(2));
 								if(responseList.size()>3){
-									fout.append(" having members ");
+									//fout.append(" having members ");
 									for(int i=3;i<responseList.size();i++){
-										fout.append(responseList.get(i)+" ");
+										//fout.append(responseList.get(i)+" ");
 									}
 									
 								}
-								fout.append("\n");
+								//fout.append("\n");
 									
 							}
 							
 						}
 						else{
-								fout.append(responseList.get(2)+"\n");
+								//fout.append(responseList.get(2)+"\n");
 						}
 					}
 					else if("chatResponse".equalsIgnoreCase(responseType)){
 						if("success".equalsIgnoreCase(responseList.get(1))){
 							String chatMessage=responseList.get(2);
-							fout.append("ChatRoom: "+chatMessage.replaceFirst(":", "\t")+"\n");
+							//fout.append("ChatRoom: "+chatMessage.replaceFirst(":", "\t")+"\n");
 						}
 						else{
-							fout.append(responseList.get(2)+"\n");
+							//fout.append(responseList.get(2)+"\n");
 						}
 					}
 					else if("removeUserFromSessionResponse".equalsIgnoreCase(responseType)){
 						if("success".equalsIgnoreCase(responseList.get(1))){
-							sessions.remove(responseList.get(2));
-							fout.append("You have been removed from session "+responseList.get(2)+"\n");
+							if(("user"+userID).equalsIgnoreCase(responseList.get(3))){
+								sessions.remove(responseList.get(2));
+								//fout.append("You have been removed from chatroom "+responseList.get(2)+"\n");
+							}
+							else{
+								//fout.append(responseList.get(3)+" has exited from chatroom "+responseList.get(2)+"\n");
+							}
+							
 						}
 						else{
-							fout.append(responseList.get(2)+"\n");
+							//fout.append(responseList.get(2)+"\n");
 						}
 					}
 					
 			}
-			fout.flush();
+			//fout.flush();
 			
 			
 			
-		}
+		}while(login);
 		
 		//fout.close();
-		//in.readLine();
-		//in.close();
-		//out.close();
-		//console.close();
+		
+		in.close();
+		out.close();
+		
 	
 	}
 
