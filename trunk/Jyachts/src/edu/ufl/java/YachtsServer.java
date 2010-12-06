@@ -3,15 +3,21 @@ package edu.ufl.java;
 import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class YachtsServer {
 
 	private ServerSocket server;
 	private Socket connection;
 	int concurrentconnectioncount=0;
+	private Command cmd = null;
+	private static ExecutorService executor; 
+
 	
 	public YachtsServer(int port) throws IOException {
 		server = new ServerSocket(port);
+		cmd = Command.getCommandInstance();
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			public void run() {
 				try {
@@ -30,19 +36,21 @@ public class YachtsServer {
 				System.out.println("YACHTSERVER: Got connection #: "+concurrentconnectioncount+
 						"\nYACHTSERVER: Conn: connection.getRemoteSocketAddress(): "+connection.getRemoteSocketAddress());
 				
-				ConnectionHandler conn = new ConnectionHandler(connection);
-				conn.start();
+				executor.execute(new ConnectionHandler(connection, cmd));
+				
+				/* Can be used for one-thread-per-user scenario
+				ConnectionHandler conn = new ConnectionHandler(connection, cmd);
+				conn.start();*/
 			}
 		} catch (IOException e) {
-			System.err.println("YACHTSERVER: Error in server process: " + e.getMessage());
-			e.printStackTrace();
+			System.err.println("YACHTSERVER: Error in server process: " + e.toString());
 		}
 	}
 	
 	public static void main(String arg[]) throws Throwable {
 		YachtsServer server = null;
 		if(arg.length == 0) {
-			server = new YachtsServer(5255);
+			server = new YachtsServer(3000);
 			System.out.println("YACHTSERVER: Starting Server on port 5255");
 		} else if(arg.length == 1) {
 			server = new YachtsServer(Integer.parseInt(arg[0]));
@@ -53,13 +61,8 @@ public class YachtsServer {
 			System.exit(1);
 		}
 		
-		// start session manager 
-//		SessionManager sessionmanager = SessionManager.getSessionManager();
-		
-		// start login manager 
-//		LoginManager loginmanager = LoginManager.getLoginManager();
-		
 		// start server
+		executor = Executors.newCachedThreadPool();
 		server.runServer();
 	}
 	
@@ -68,19 +71,22 @@ public class YachtsServer {
 		private Socket conn;
 		private BufferedReader in;
 		private PrintWriter out;
+		private Command cmd = null;
 		
-		public ConnectionHandler(Socket connection) {
+		public ConnectionHandler(Socket connection, Command cmd) 
+		{
 			this.conn = connection;
+			this.cmd = cmd;
 		}
 		
-		public String processCommand(String inputstring){
+		public String processCommand(String inputstring) throws IOException{
 			// get the command
 			ArrayList<String> tokensList = Utils.parse(inputstring);
 			boolean status;
 
-			Command cmd = new Command();
+			
 			String cmdName = tokensList.get(0);
-			System.out.println("YACHTSERVER: Extracted command: "+ cmdName);
+			ConsoleLogger.log("YACHTSERVER: Extracted command: "+ cmdName + "\n");
 				
 			if(cmdName.equalsIgnoreCase("REGISTER"))
 			{
@@ -89,10 +95,10 @@ public class YachtsServer {
 					return "RegisterResponse^success^You have been Registered Successfully";
 				else
 					return "RegisterResponse^failure^Registration Failed";
-			}				
+			}
 			else if(cmdName.equalsIgnoreCase("LOGIN"))
 			{
-				System.out.println("YACHTSERVER: Login: Client socket details: "+this.conn);
+				ConsoleLogger.log("YACHTSERVER: Login: Client socket details: "+this.conn);
 				status = cmd.loginCommand(tokensList,this.conn);
 				
 				if (status){
@@ -115,7 +121,7 @@ public class YachtsServer {
 			
 			else if(cmdName.equalsIgnoreCase("getAllLoggedInUsers")){
 				String userlist = cmd.getAllLoggedInUsers();
-				System.out.println("YACHTSERVER: User list: "+userlist);
+				ConsoleLogger.log("YACHTSERVER: User list: "+userlist+ "\n");
 				return userlist;
 			}
 			else if(cmdName.equalsIgnoreCase("Chat")){
@@ -124,11 +130,6 @@ public class YachtsServer {
 			else if(cmdName.equalsIgnoreCase("removeUserFromSession"))
 			{
 				cmd.removeUserFromSessionCommand(tokensList);
-			}
-			else{
-				// unknown command
-				System.out.println("YACHTSERVER: ERROR: Unknown command from Client: " + inputstring);
-//				return "Error: Unknown command received: "+inputstring;
 			}
 			return null;
 
@@ -147,35 +148,38 @@ public class YachtsServer {
 				{
 		
 					char[] cbuf = new char[2000];
-		 			in.read(cbuf);
+		 			int charsRead = in.read(cbuf);
+		 			if (charsRead == -1)
+		 			{
+		 				logout = true;
+		 				break;
+		 			}
 		 			String cmd = new String(cbuf);
-		 			System.out.println("CMD PRINTED:::: \t" + cmd);
-		 			System.out.println("some string to be printed" + "\0");
-		 			//parse server response into parts
-		 			//System.out.println("User"+userID+" : Server Response: "+response);
 		 			ArrayList<String> commandsReceived = Utils.parseMessage(cmd);
 					
 					for(String command:commandsReceived)
 					{
-						// receive command
-						System.out.println("YACHTSERVER: Got command: " + command);
-						
 						// process command
 						serverresp = processCommand(command);
 						if(serverresp != null)
-						{   System.out.println("server response to client: " + serverresp);
+						{   ConsoleLogger.log("server response to client: " + serverresp);
 						
 							out.print(serverresp + "~");
 							out.flush();
 						}
 					}
 				}
-				in.close();
-				out.close();
-				conn.close();
 			} catch (IOException e) {
-				System.err.println("ERROR: " + e.getMessage());
-				e.printStackTrace();
+				ConsoleLogger.log("error in connection with client" + e.toString() + "\n") ;
+			}
+			finally{
+				try {
+					out.close();
+					conn.close();
+					in.close();
+				} catch (IOException e) {
+					ConsoleLogger.log("error in closing socket : " + e.toString() + "\n") ;
+				}				
 			}
 
 			

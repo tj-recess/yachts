@@ -7,10 +7,20 @@ import java.util.StringTokenizer;
 public class Command
 {
 		private LoginManager loginManager = null;
+		private DBManager dbm = null;
+		private SessionManager sessionManager = null;
+		private static Command cmdInstance = new Command();
 		
-		public Command()
+		private Command()
 		{
 			loginManager = LoginManager.getLoginManager();
+			sessionManager = SessionManager.getSessionManager();
+			dbm = new DBManager();
+		}
+				
+		public static Command getCommandInstance()
+		{
+			return cmdInstance;
 		}
 	
 		// parses the input string into a string array 
@@ -28,70 +38,64 @@ public class Command
 		}
 		
 		// login processing
-		public boolean loginCommand(ArrayList<String> params, Socket conn) {
-			System.out.println("COMMANDPARSER: Received login command...");
-			System.out.println("COMMANDPARSER: Socket Details: "+conn);
-
-			loginManager = LoginManager.getLoginManager();
-			return loginManager.loginUser(params.get(1), params.get(2), conn);
+		public boolean loginCommand(ArrayList<String> params, Socket conn) 
+		{
+			if (loginManager == null)
+				return false;
 			
+			return loginManager.loginUser(params.get(1), params.get(2), conn);
 		}
 		
 		// registers a new user
-		public boolean registerCommand(ArrayList<String> params) {
-			System.out.println("COMMANDPARSER: Received register command...");
-			DBManager dbm = new DBManager();
-			
+		public boolean registerCommand(ArrayList<String> params) 
+		{			
 			if (dbm == null)
 				return false;
 			
 			return dbm.registerUser(new User(params.get(3),params.get(4), params.get(1), params.get(2), params.get(5), params.get(6)));
 		}
 
-		public void createSessionCommand(ArrayList<String> params) {
+		public void createSessionCommand(ArrayList<String> params) 
+		{
+			if (sessionManager == null)
+				return;
 
-			System.out.println("COMMANDPARSER: received create session command ");
-			
 			params.remove(0);//remove command name
-			
-			try{
-				// register the session
-				SessionManager.getSessionManager().createSession(params);
-			}catch(Exception e){
-				System.out.println("COMMANDPARSER: ERROR: Error in Creating Session");
-				e.printStackTrace();
-			}
+			sessionManager.createSession(params);
 		}
 		
-		public void addUsersToSessionCommand(ArrayList<String> params) {
-
-			System.out.println("COMMANDPARSER: received add users to session command ");
+		public void addUsersToSessionCommand(ArrayList<String> params) 
+		{
+			if (sessionManager == null)
+				return;
 
 			params.remove(0);//remove command name
 			String sessionID = params.get(0);
 			params.remove(0);//remove sessionID
-			try{
-				// register the session
-				SessionManager.getSessionManager().addUserToSession(sessionID, params);
-			}catch(Exception e){
-				System.out.println("COMMANDPARSER: ERROR: Error in Add User To Session");
-				e.printStackTrace();
-			}
+			sessionManager.addUserToSession(sessionID, params);
 		}
 
-		public String getAllLoggedInUsers() {
-			// TODO Auto-generated method stub
-			System.out.println("COMMANDPARSER: Received getAllLoggedInUsers command...");
-			return LoginManager.getLoginManager().getLoggedInUsers();
+		public String getAllLoggedInUsers()
+		{
+			if (loginManager == null)
+				return null;
+			
+			return loginManager.getLoggedInUsers();
 		}
 		
 		public void removeUserFromSessionCommand(ArrayList<String> params)
 		{
-			SessionManager.getSessionManager().removeUserFromSession(params.get(1), params.get(2));
+			if (sessionManager == null)
+				return;
+
+			sessionManager.removeUserFromSession(params.get(1), params.get(2));
 		}
 		
 		public void chat(ArrayList<String> params)
 		{
-			SessionManager.getSessionManager().chat(params.get(1), params.get(2), params.get(3));
+			if (sessionManager == null)
+				return;
+
+			sessionManager.chat(params.get(1), params.get(2), params.get(3));
 		}
 }

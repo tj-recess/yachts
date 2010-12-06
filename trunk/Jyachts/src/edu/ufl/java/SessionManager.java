@@ -1,6 +1,7 @@
 package edu.ufl.java;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.io.IOException;
@@ -16,7 +17,8 @@ public class SessionManager
 	
 	private SessionManager()
 	{
-		sessionMap = Collections.synchronizedMap(new HashMap<String, ArrayList<String>>());
+//		sessionMap = Collections.synchronizedMap(new HashMap<String, ArrayList<String>>());
+		sessionMap = new ConcurrentHashMap<String, ArrayList<String>>();
 	}
 	
 	public static SessionManager getSessionManager()
@@ -34,12 +36,12 @@ public class SessionManager
 
 		int newSessionID = sessionCount.getAndIncrement();
 		sessionMap.put(Integer.toString(newSessionID), new ArrayList<String>());
-		addUserToSession(Integer.toString(newSessionID), userNames);
+		addUserToSessionHelper(Integer.toString(newSessionID), userNames);
 			
 	}
 	
 	//assumes that sessionID exists and first user is in the same session
-	public void addUserToSession(String sessionID, ArrayList<String> userNames)
+	public void addUserToSessionHelper(String sessionID, ArrayList<String> userNames)
 	{
 		LoginManager lm = LoginManager.getLoginManager();
 				
@@ -115,7 +117,7 @@ public class SessionManager
 			try
 			{
 				PrintWriter pw = new PrintWriter(socket.getOutputStream());
-				System.out.println("server response to client: " + msg);
+				ConsoleLogger.log("ServerResponse : " + msg);
 				pw.print(msg + "~");
 				pw.flush();
 				
@@ -126,5 +128,16 @@ public class SessionManager
 			}
 			
 		}
+	}
+	
+	public void addUserToSession(String sessionID, ArrayList<String> userNames)
+	{
+		ArrayList<String> existingUsers = sessionMap.get(sessionID);
+		if(existingUsers != null && existingUsers.contains(userNames.get(0)))
+		{
+			userNames.remove(0);
+			addUserToSessionHelper(sessionID, userNames);
+		}
+			
 	}
 }
