@@ -77,12 +77,12 @@ public class YachtsServer {
 		YachtsServer server = null;
 		if(arg.length == 0) {
 			server = new YachtsServer(3000);
-			System.out.println("YACHTSERVER: Starting Server on port 5255");
+			System.out.println("YACHTSERVER: Starting Server on port 3000");
 		} else if(arg.length == 1) {
 			server = new YachtsServer(Integer.parseInt(arg[0]));
 			System.out.println("YACHTSERVER: Starting Server on port " + arg[0]);
 		} else {
-			System.out.println("YACHTSERVER: Usage: java YachtsServer      -> starts server on default port 5255");
+			System.out.println("YACHTSERVER: Usage: java YachtsServer      -> starts server on default port 3000");
 			System.out.println("       java YachtsServer port -> starts server on given port");
 			System.exit(1);
 		}
