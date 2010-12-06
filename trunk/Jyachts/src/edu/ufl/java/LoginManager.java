@@ -14,17 +14,28 @@ public class LoginManager {
         private static LoginManager loginmgr = new LoginManager();
         private DBManager dbm = null;
         
-        // always returns the one instance 
+        /*
+         * always returns the one instance
+         * no synchronization is needed here because LoginManager is guaranteed to be 
+         * initialized before the constructor is called 
+         */
         public static LoginManager getLoginManager(){
         		return loginmgr;
         }
         
+        /*
+         * private constructor conforming to singleton factory pattern
+         */
         private LoginManager(){
 	        	loggedInUsersMap = new HashMap<String,User>();
 	        	loggedInUsersSockets = new HashMap<String,Socket>();
 	        	dbm = new DBManager();
-        } // singleton
+        }
         
+        /*
+         * remove the requested user from loggedInUsersMap
+         * and it's corresponding sockets
+         */
         public User logoutUser(String username)
         {
     		ConsoleLogger.log("LOGINMGR: Removing user from logged in users list "+username);
@@ -34,6 +45,10 @@ public class LoginManager {
     		return removedUser;
         }
         
+        /*
+         * if request came from a valid user then save user's details and socket info inside two 
+         * different Concurrent HashMap so that it can be retrieved for communication as and when needed 
+         */
         public boolean loginUser(String username, String password, Socket usersocket)
         {
             /* put the user in the logged in users list */
@@ -45,6 +60,7 @@ public class LoginManager {
     		}
     		else
     		{
+    			//if database manager is not initialized, return null as user can't be logged in
     			if (dbm == null)
     				return false;
     			User loggedInUser = dbm.loginUser(username, password);
@@ -61,15 +77,19 @@ public class LoginManager {
     		return false;
         }
         
+        //return user info on demand
         public User getUserInfo(String username)
         {
         	return loggedInUsersMap.get(username);
         }
         
-        public String getLoggedInUsers(){
+        //return all logged in users in formatted manner
+        public String getLoggedInUsers()
+        {
         	return "LoggedInUsers^"+loggedInUsersMap.keySet().toString().replace('[', ' ').replace(']', ' ').replace(',','^').replaceAll(" ", "");
         }
         
+        //returns user socket so that other server module can write it's response to a particular client
         public synchronized Socket getUserSocket(String username)
         {
         	return loggedInUsersSockets.get(username);

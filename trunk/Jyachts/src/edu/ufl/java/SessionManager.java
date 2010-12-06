@@ -77,6 +77,10 @@ public class SessionManager
 		}
 	}
 	
+	/*
+	 * As this method writes to the sessionMap object with a new list (from which it is removed)
+	 * we need explicit synchronization here
+	 */
 	public void removeUserFromSession(String sessionID, String username)
 	{
 		CopyOnWriteArrayList<String> existingUsersInSession = new CopyOnWriteArrayList<String>();
@@ -102,6 +106,10 @@ public class SessionManager
 		}
 	}
 	
+	/*
+	 * add a particular user to a session given, this methods just 
+	 * verifies the requestor's identity and formats the argument list
+	 */
 	public void addUserToSession(String sessionID, ArrayList<String> userNames)
 	{
 		CopyOnWriteArrayList<String> existingUsersInSession = sessionMap.get(sessionID);
@@ -112,6 +120,9 @@ public class SessionManager
 		}		
 	}
 	
+	/*
+	 * send the text message to all users in the given session ID in ==
+	 */
 	public void chat(String username, String sessionID, String msg)
 	{
 		CopyOnWriteArrayList<String> existingUsersInSession = sessionMap.get(sessionID);
@@ -130,6 +141,12 @@ public class SessionManager
 			writeOnUserSocket(response, username);
 		}
 	}
+	
+	/*
+	 * get the user socket from the hash map stored in loginManager
+	 * write is synchronized as we dont' want multiple threads to cause datarace 
+	 * while writing to the output stream
+	 */
 	
 	public void writeOnUserSocket(String msg, String username)
 	{

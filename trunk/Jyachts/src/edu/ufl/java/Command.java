@@ -2,7 +2,6 @@ package edu.ufl.java;
 
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.StringTokenizer;
 
 public class Command
 {
@@ -12,24 +11,10 @@ public class Command
 		
 		public Command()
 		{
+			//get instance of all the utilities required to operate various commands
 			loginManager = LoginManager.getLoginManager();
 			sessionManager = SessionManager.getSessionManager();
 			dbm = new DBManager();
-		}
-				
-	
-		// parses the input string into a string array 
-		public String[] parse(String inputstring){
-			String[] params = new String[10];
-			int count=0;
-			
-			// get the parameters
-			StringTokenizer st = new StringTokenizer(inputstring,"^");
-			while(st.hasMoreTokens()){
-				params[count++] = st.nextToken();
-			}
-			
-			return params;
 		}
 		
 		// login processing
@@ -37,7 +22,7 @@ public class Command
 		{
 			if (loginManager == null)
 				return false;
-			
+			//simply pass on the request to loginManager if it's not null
 			return loginManager.loginUser(params.get(1), params.get(2), conn);
 		}
 		
@@ -46,7 +31,7 @@ public class Command
 		{			
 			if (dbm == null)
 				return false;
-			
+			//simply pass on the request to Database manager so that user is permanently registered in database
 			return dbm.registerUser(new User(params.get(3),params.get(4), params.get(1), params.get(2), params.get(5), params.get(6)));
 		}
 
@@ -55,7 +40,7 @@ public class Command
 			if (sessionManager == null)
 				return;
 
-			params.remove(0);//remove command name
+			params.remove(0);//remove command name and pass on rest of the parameters to session manager 
 			sessionManager.createSession(params);
 		}
 		
@@ -70,14 +55,22 @@ public class Command
 			sessionManager.addUserToSession(sessionID, params);
 		}
 
+		/*
+		 * return all users who are logged in so that client can 
+		 * pick some user to chat with
+		 */
 		public String getAllLoggedInUsers()
 		{
 			if (loginManager == null)
 				return null;
-			
+		
 			return loginManager.getLoggedInUsers();
 		}
 		
+		/*
+		 * user can request to remove himself/herself from the session
+		 * this commands is redirected to session manager
+		 */
 		public void removeUserFromSessionCommand(ArrayList<String> params)
 		{
 			if (sessionManager == null)
@@ -86,6 +79,10 @@ public class Command
 			sessionManager.removeUserFromSession(params.get(1), params.get(2));
 		}
 		
+		/*
+		 * send some text message to specified chat (session) 
+		 * username, session id, text msg are the intended parameters
+		 */
 		public void chat(ArrayList<String> params)
 		{
 			if (sessionManager == null)
