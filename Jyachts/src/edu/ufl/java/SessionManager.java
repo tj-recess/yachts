@@ -60,36 +60,35 @@ public class SessionManager
 					existingUsersInSession.addAll(list);
 					if(!list.contains(username))
 						list.add(username);
-					sessionMap.put(sessionID, list);	
-				}				
-				//user is added
-				//send response to existing users
-				String message= "addUsersToSessionResponse^success^" + sessionID;
-				String singleMessage= "addUsersToSessionResponse^success^" + sessionID + "^" + username;
-			
-				for(String existingUser: existingUsersInSession){
-					writeOnUserSocket(singleMessage, existingUser);
-					message+="^"+existingUser;			
-				}				
-				//send response to newly added user				
-				writeOnUserSocket(message, username);
+				}//user is added
+				
+				if(!existingUsersInSession.contains(username))
+				{
+					//send response to existing users
+					String message= "addUsersToSessionResponse^success^" + sessionID;
+					String singleMessage= "addUsersToSessionResponse^success^" + sessionID + "^" + username;
+				
+					for(String existingUser: existingUsersInSession){
+						writeOnUserSocket(singleMessage, existingUser);
+						message+="^"+existingUser;			
+					}				
+					//send response to newly added user				
+					writeOnUserSocket(message, username);
+				}
 			}
 		}
 	}
 	
 	/*
-	 * As this method writes to the sessionMap object with a new list (from which it is removed)
-	 * we need explicit synchronization here
+	 * As this method utilizes copy-on-write arraylist, we dont' need any 
+	 * explicit synchronization here
 	 */
 	public void removeUserFromSession(String sessionID, String username)
 	{
 		CopyOnWriteArrayList<String> existingUsersInSession = new CopyOnWriteArrayList<String>();
 		CopyOnWriteArrayList<String> list = sessionMap.get(sessionID);
 		existingUsersInSession.addAll(list);
-		synchronized (list) {
 			list.remove(username);
-			sessionMap.put(sessionID, list);
-		}
 		if(existingUsersInSession.contains(username))
 		{
 			existingUsersInSession.remove(username);
