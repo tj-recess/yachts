@@ -113,6 +113,8 @@ public class YachtsServer {
 		 */
 		public String processCommand(String inputstring) throws IOException
 		{
+			if (inputstring != null && inputstring.contains("^"))
+				ConsoleLogger.log("Input Received: " + inputstring);
 			// get the command
 			ArrayList<String> tokensList = Utils.parse(inputstring);
 			boolean status;
