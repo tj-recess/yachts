@@ -11,7 +11,7 @@ public class ConsoleLogger {
 	{
 		try
 		{
-			loggerOut = new BufferedWriter(new FileWriter("ConsoleOutput.txt" + System.currentTimeMillis()));
+			loggerOut = new BufferedWriter(new FileWriter("ConsoleOutput" + System.currentTimeMillis() + ".txt"));
 		}
 		catch(IOException ioex)
 		{
@@ -19,11 +19,26 @@ public class ConsoleLogger {
 		}
 	}
 	
-	public static void log(String msg)
+	public static synchronized void log(String msg)
 	{
 		if (loggerOut == null)
 			return;
 		try {loggerOut.append(msg + "\n");}catch(Exception ex){/*can't write to log file, do nothing*/}
+	}
+	
+	public static void flushLog()
+	{
+		try {loggerOut.flush();}catch(Exception ex){/*can't write to log file, do nothing*/}
+	}
+	
+	public static void closeLogging()
+	{
+		try 
+		{
+			loggerOut.flush();
+			loggerOut.close();
+		}
+		catch(Exception ex){/*can't write to log file, do nothing*/}
 	}
 
 }
