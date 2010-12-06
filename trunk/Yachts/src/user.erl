@@ -135,8 +135,7 @@ executePostLoginCommands([H|T], ClientSocket) ->
 					sessionManager:chat({Sender, IntSessionID, string:join(Text,"^")});
 				{logout,[User]} -> %send message to userManager process to log out the user and a second message to sessionManager to remove the user from corresponding sessions
 					io:fwrite(console,"~n client sent : logout, params: ~w",[User]),
-					userManager:logout(User),
-					sessionManager:logout(User);
+					userManager:logout(User);
 				getAllLoggedInUsers -> % 
 					LoggedInUsersList = userManager:getAllLoggedInUsers(),
 					Status = string:concat(string:join(["LoggedInUsers"|LoggedInUsersList],"^"),"\n"),					
@@ -215,6 +214,11 @@ userLoop(ClientSocket) ->
 				ResponseMsg = string:join(["chatResponse","timeout"|Reason],"^"),
 				sendClient(ClientSocket,ResponseMsg),
 				userLoop(ClientSocket);
+			
+			{logoutResponse,Status, Response} ->
+				ResponseMsg = string:join(["logoutResponse",Status,Response],"^"),
+				sendClient(ClientSocket,ResponseMsg);
+			
 			endProcess ->
 				clientDone
 		after 100 ->

@@ -72,6 +72,10 @@ getUserInfo(Username) ->
 	after 2000 ->
 		io:fwrite(console,"Operation Timed Out, try again later",[])
 	end.
+%method to logout the user
+logout(Username) ->
+	userManager ! {logout, Username}. %send message to userManager process to log out the user 
+	
 
 getAll() -> %%returns entire dict for testing purpose
 	userManager ! {self(), getAll},
@@ -138,7 +142,17 @@ loginManagerDB(LoggedInUserList, Conn)->
 							loginManagerDB(LoggedInUserList, Conn)
 					end
 			end;
-			
+		{logout, Username} ->
+		  	case dict:find(Username, LoggedInUserList) of 
+				{ok,[{_,UserPid}]} -> %if user is a valid logged in user
+					pg2:leave(login,UserPid), %remove the user from  login process group
+					NewLoggedInUserList = dict:erase(Username, LoggedInUserList), %update LoggedInUserList
+					UserPid ! {logoutResponse,"success",Username},
+					loginManagerDB(NewLoggedInUserList, Conn);
+				Weird ->
+					io:fwrite(console,"received weird value in logout : ~w ~n",[Weird]),
+					loginManagerDB(LoggedInUserList, Conn)
+			end;
 		{From, getAllLoggedInUsers} ->
 			From ! dict:fetch_keys(LoggedInUserList),%return Logged-in-users list
 			loginManagerDB(LoggedInUserList, Conn);

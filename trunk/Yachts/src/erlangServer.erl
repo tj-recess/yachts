@@ -25,15 +25,26 @@
 %% API Functions
 %%
 % Call echo:listen(Port) to start the service.
-listen(Port) ->
-	userManager:start(),
-	sessionManager:start(),
+listen(Port,MaxConn) ->
+	{TimeUserManager,_}=timer:tc(userManager,start,[]),
+	io:format("Time taken by userManager ~w~n",[TimeUserManager]),
+	{TimeSessionManager,_}=timer:tc(sessionManager,start,[]),
+	io:format("Time taken by sessionManager ~w~n",[TimeSessionManager]),
+	%userManager:start(),
+	%sessionManager:start(),
     {ok, LSocket} = gen_tcp:listen(Port, ?TCP_OPTIONS),
-    spawn(fun() -> accept(LSocket) end).
+    {Time,_}=timer:tc(?MODULE,accept,[LSocket,MaxConn,1]),
+	io:format("Time taken by accept ~w~n",[Time]).
+	%spawn(fun() -> accept(LSocket) end).
 
-% Wait for incoming connections, spawn the user:handleClient/1 proces when we get one and continue waiting.
-accept(LSocket) ->
-    {ok, Socket} = gen_tcp:accept(LSocket),
-    spawn(user,handleClient,[Socket]),
-    accept(LSocket).
+% Wait for incoming connections, spawn tMaxConnhe user:handleClient/1 proces when we get one and continue waiting.
+accept(LSocket,MaxConn,Count) ->
+	if
+		Count==MaxConn ->
+			io:format("Maximum Connections Reached ~w !! No more connections~n",[Count]);
+		Count =< MaxConn ->
+		 	{ok, Socket} = gen_tcp:accept(LSocket),
+    		spawn(user,handleClient,[Socket]),
+    		accept(LSocket,MaxConn,Count+1)
+	end.
 
