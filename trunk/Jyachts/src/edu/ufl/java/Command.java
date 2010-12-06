@@ -9,19 +9,14 @@ public class Command
 		private LoginManager loginManager = null;
 		private DBManager dbm = null;
 		private SessionManager sessionManager = null;
-		private static Command cmdInstance = new Command();
 		
-		private Command()
+		public Command()
 		{
 			loginManager = LoginManager.getLoginManager();
 			sessionManager = SessionManager.getSessionManager();
 			dbm = new DBManager();
 		}
 				
-		public static Command getCommandInstance()
-		{
-			return cmdInstance;
-		}
 	
 		// parses the input string into a string array 
 		public String[] parse(String inputstring){

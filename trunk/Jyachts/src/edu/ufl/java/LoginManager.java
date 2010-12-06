@@ -70,7 +70,7 @@ public class LoginManager {
         	return "LoggedInUsers^"+loggedInUsersMap.keySet().toString().replace('[', ' ').replace(']', ' ').replace(',','^').replaceAll(" ", "");
         }
         
-        public Socket getUserSocket(String username)
+        public synchronized Socket getUserSocket(String username)
         {
         	return loggedInUsersSockets.get(username);
         }
